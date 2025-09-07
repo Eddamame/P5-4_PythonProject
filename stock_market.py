@@ -24,3 +24,5 @@ df = df.round({'open': 2, 'high': 2, 'low': 2, 'close': 2})
 print(df.head(5))
 
 print(1)
+#Ignatius Update
+#Lideon Update
