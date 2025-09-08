@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 #Read CSV File from github
-dataset_url = 'https://github.com/Eddamame/INF1002_Stock/blob/main/Dataset/StockAnalysisDataset.csv?raw=true'
+dataset_url = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
 df = pd.read_csv(dataset_url)
 
 #Change all floats to 2 decimal places
@@ -20,3 +20,7 @@ df['date'] = pd.to_datetime(df['date'])
 
 # For those who need to use graphs,
 # Consider using libraries such as 'matplotlib','seaborn', 'plotnine' -- u guys can choose
+
+#Predictive Modelling Notes
+
+print(df.head(5))
