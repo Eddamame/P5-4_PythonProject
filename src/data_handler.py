@@ -3,7 +3,11 @@ import pandas as pd
 import numpy as np
 
 
-def data_handler(filepath: str, filterName: list[str]) -> pd.DataFrame:
+def data_handler(
+        filepath: str, 
+        filterName: list[str] | None = None,
+        filterTime: tuple[int, int] | None = None
+    ) -> pd.DataFrame:
     # Parameters:
     #   filepath: path to CSV file
     #   filterName: List of Names to filter, e.g filterName = ['AAPL', 'AMZN', 'GOOG', 'MSFT']
@@ -25,7 +29,13 @@ def data_handler(filepath: str, filterName: list[str]) -> pd.DataFrame:
     df = df.round({'open': 2, 'high': 2, 'low': 2, 'close': 2})
 
     # Filter specific Names
-    df = df[df['Name'].isin(filterName)]
+    if filterName:
+        df = df[df['Name'].isin(filterName)]
+
+    # Filter by time (years)
+    if filterTime:
+        start, end = filterTime
+        df = df[(df['date'].dt.year >= start) & (df['date'].dt.year <= end)]
 
     # Sort by name and date, then reset index & drop previous dataframe
     df.sort_values(by=['Name', 'date'], inplace=True)
