@@ -7,21 +7,25 @@ analyzing time-series data, particularly for financial metrics.
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import datetime as dt 
 
-# --- 1. Basic Statistical Functions (Helper Functions) ---
-# These are building blocks that might be useful for more complex metrics.
+# load data to test 
+file_path = '../data/StockAnalysisDataset.csv'
+data = pd.read_csv(file_path, parse_dates=['date'], index_col='date')
+data.info
+print(data.columns)
 
-def calculate_returns(data: pd.Series) -> pd.Series:
-    """
-    Calculates the percentage returns from a series of prices.
+# --- 1. Daily Returns Function ---
+#Calculates the percentage returns from a series of prices.
+
+def calculate_returns(data: pd.Series):
     
-    Args:
-        data (pd.Series): A pandas Series of prices.
-        
-    Returns:
-        pd.Series: A Series of percentage returns.
-    """
+
     # TODO: Implement the logic for calculating returns.
+    data['daily_return'] = ((data['close'] - data['open']) / data['open']) * 100
+    print(" \n--- DataFrame with new 'daily_return' column ---")
+    print(data.head())
     pass
 
 # --- 2. Simple Moving Average (SMA) ---
@@ -38,6 +42,7 @@ def calculate_sma(data: pd.Series, window: int) -> pd.Series:
         pd.Series: A Series containing the SMA values.
     """
     # TODO: Implement the SMA calculation using pandas.rolling().
+    
     pass
 
 # --- 3. Relative Strength Index (RSI) ---
