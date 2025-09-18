@@ -42,7 +42,7 @@ if __name__ == "__main__":
     print(result)
     
     # Manual verification for the first few values:
-    # Day 1: No return (NaN)
+    # Day 1: No return (NaN) 
     # Day 2: (102-100)/100 = 0.02
     # Day 3: (101-102)/102 ≈ -0.0098
     # Day 4: (105-101)/101 ≈ 0.0396
