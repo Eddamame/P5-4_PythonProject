@@ -5,6 +5,13 @@ import matplotlib.pyplot as plt
 from datetime import datetime,timedelta
 import time
 
+
+# Create a new column year
+df['year'] = pd.DatetimeIndex(df['date']).year
+
+# filter out the Name 
+stock_name = pd.unique(df['Name'])
+#user imput of the stock 
 def calculate_sma(stock_name, window_size):
     # Filter the DataFrame for the selected stock
     filtered_df = df[(df['Name'] == stock_name) & (df['year'] > 2015)].copy()
