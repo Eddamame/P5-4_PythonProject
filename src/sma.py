@@ -17,8 +17,20 @@ def calculate_sma(stock_name, window_size):
     filtered_df = filtered_df.set_index('date')
     closed_price = filtered_df['close'].tolist()
   
-    sma = [sum(closed_price[i:i+window_size]) / window_size 
-           for i in range(len(closed_price) - window_size + 1)]
-
+    i=0
+    # Initialize an empty list to store simple moving averages
+    sma =[]
+    # Loop through the closed price to consider every window size
+    while i < len(closed_price) - window_size + 1:
+              # Store elements from i to i+window_size
+              # in list to get the current window
+              window = closed_price[i : i + window_size]
+              # Calculate the average of current window
+              window_average = round(sum(window) / window_size, 2)
+              # Store the average of current
+              # window in moving average list
+              sma.append(window_average)
+              # Shift window to right by one position
+              i += 1
     filtered_df['sma'] = [None]*(window_size-1) + sma
     return filtered_df
