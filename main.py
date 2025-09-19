@@ -1,6 +1,7 @@
 # File: main.py
 
 from src.data_handler import data_handler
+from src.visualization import plot_price_and_sma
 import pandas as pd
 
 def main():
@@ -9,6 +10,11 @@ def main():
     filterName = ['AAPL', 'AMZN', 'MSFT', 'GOOG']
     filterTime = (2016, 2017)
     df = data_handler(filepath, filterName, filterTime)
+    # Get user input for the stock name and the window size
+    stock_name = input("Which stock market would you like to see: ").strip()
+    window_size = int(input("Enter SMA window size (e.g., 50): "))
+    # Plot the price and SMA
+    plot_price_and_sma(stock_name, window_size)
     print(df.head(5))
 if __name__ == "__main__":
     main()
