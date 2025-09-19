@@ -1,7 +1,5 @@
 #Import Libraries
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime,timedelta
 from src.data_handler import df
 import time
