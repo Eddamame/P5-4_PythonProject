@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime,timedelta
+from src.data_handler import data_handler
 import time
-
 
 # Create a new column year
 df['year'] = pd.DatetimeIndex(df['date']).year
