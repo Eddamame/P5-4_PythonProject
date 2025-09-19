@@ -20,7 +20,3 @@ df['date'] = pd.to_datetime(df['date'])
 
 # For those who need to use graphs,
 # Consider using libraries such as 'matplotlib','seaborn', 'plotnine' -- u guys can choose
-
-#Predictive Modelling Notes
-
-print(df.head(5))
