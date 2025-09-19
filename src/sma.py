@@ -1,9 +1,10 @@
 #Import Libraries
 import pandas as pd
 from datetime import datetime,timedelta
-from src.data_handler import df
+from src.data_handler import data_handler
 import time
 import numpy as np
+df =data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true')
 # Create a new column year
 df['year'] = pd.DatetimeIndex(df['date']).year
 

@@ -1,6 +1,6 @@
 # Use this for your visualization functions 
 import matplotlib.pyplot as plt
-from sma import calculate_sma  
+from src.sma import calculate_sma  
 
 def plot_price_and_sma(stock_name, window_size):
     # Calculate SMA 
