@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime,timedelta
 from src.data_handler import df
 import time
-
+import numpy as np
 # Create a new column year
 df['year'] = pd.DatetimeIndex(df['date']).year
 

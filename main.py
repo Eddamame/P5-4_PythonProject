@@ -2,7 +2,7 @@
 import pandas as pd
 from src.data_handler import data_handler
 from src.visualization import plot_price_and_sma
-import numpy as np
+
 
 def main():
     filepath = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
