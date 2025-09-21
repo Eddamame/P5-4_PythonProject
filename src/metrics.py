@@ -1,7 +1,7 @@
 """
 metrics.py
 
-This module contains various mathematical and statistical functions for
+Mathematical and statistical functions for
 analyzing time-series data, particularly for financial metrics.
 """
 
@@ -9,110 +9,115 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt 
+from data_handler import data_handler
 
-# load data to test 
-file_path = '../data/StockAnalysisDataset.csv'
-data = pd.read_csv(file_path, parse_dates=['date'], index_col='date')
-data.info
-print(data.columns)
+# --- SMA Analysis ---
 
-# --- 1. Daily Returns Function ---
-#Calculates the percentage returns from a series of prices.
 
-def calculate_returns(data: pd.Series):
+# --- Daily Returns --- 
+
+
+# --- Profit Calculator --- 
+
+
+ 
+# --- Upward and Downward Run Analysis ---
+
+# First, filter out prices solely based on ticker name
+# get the closing prices 
+
+def get_closing_prices(data, ticker=None):
+    """
+    Returns closing prices for the whole DataFrame or for a specific ticker.
+    """
+    if ticker:
+        filtered = data[data["Name"] == ticker]
+        return filtered["close"]
+    else:
+        return data["close"]
+
+
+    
+def calculate_runs():
+    # daily changes in closing prices
+    changes = prices.diff()
+
+    # upward, no change, downward (1, 0, -1)
+    # limitation - mainly directional; ignores magnitude (Use RSI)
+    direction = np.where(changes > 0, 1, np.where(changes < 0, -1, 0))
+
+    # initialise run count
+    runs = []
+    current_run_length = 1
+    
+    # prevent indexerror
+    current_direction = direction[0] if len(direction) > 0 else 0
     
 
-    # TODO: Implement the logic for calculating returns.
-    data['daily_return'] = ((data['close'] - data['open']) / data['open']) * 100
-    print(" \n--- DataFrame with new 'daily_return' column ---")
-    print(data.head())
-    pass
+    # check if current direction is the same as indexed direction, if it is continue run count
+    for i in range(1, len(direction)):
+        if direction[i] == current_direction and direction[i] != 0:
+            # Continue current run
+            current_run_length += 1
+        else:
+            # End current run, start new one
+            if current_direction != 0:  # we're not tracking zero runs
+                runs.append({
+                    'start_date': prices.index[i - current_run_length],
+                    'end_date': prices.index[i - 1],
+                    'direction': 'Up' if current_direction == 1 else 'Down',
+                    'length': current_run_length,
+                    'start_index': i - current_run_length,
+                    'end_index': i - 1
+                })
+            current_run_length = 1
+            current_direction = direction[i]
 
-# --- 2. Simple Moving Average (SMA) ---
+    # Close the loop, record the final run
+    if current_direction != 0:
+        runs.append({
+            'start_date': prices.index[len(prices) - current_run_length],
+            'end_date': prices.index[-1],
+            'direction': 'Up' if current_direction == 1 else 'Down',
+            'length': current_run_length,
+            'start_index': len(prices) - current_run_length,
+            'end_index': len(prices) - 1
+        })
 
-def calculate_sma(data: pd.Series, window: int) -> pd.Series:
-    """
-    Calculates the Simple Moving Average (SMA) for a given data series.
+    return pd.DataFrame(runs), direction
     
-    Args:
-        data (pd.Series): A pandas Series of prices.
-        window (int): The number of periods for the SMA calculation.
-        
-    Returns:
-        pd.Series: A Series containing the SMA values.
-    """
-    # TODO: Implement the SMA calculation using pandas.rolling().
+
     
-    pass
+def get_significant_runs(runs_df, min_length=5):
+    # To filter out runs based on length depending on trading methodology
+    significant = runs_df[runs_df['length'] >= min_length]
+    up_runs = significant[significant['direction'] == 'Up']
+    down_runs = significant[significant['direction'] == 'Down']
 
-# --- 3. Relative Strength Index (RSI) ---
+    return {
+        'up_runs': up_runs,
+        'down_runs': down_runs
+    }
 
-def calculate_rsi(data: pd.Series, window: int = 14) -> pd.Series:
-    """
-    Calculates the Relative Strength Index (RSI) for a given data series.
-    
-    Args:
-        data (pd.Series): A pandas Series of prices.
-        window (int): The number of periods for the RSI calculation (default is 14).
-        
-    Returns:
-        pd.Series: A Series containing the RSI values.
-    """
-    # TODO: Implement the RSI calculation logic. This is a bit more complex.
-    # It involves calculating gains, losses, and then the average of each.
-    pass
 
-# --- 4. Upward and Downward Run Analysis ---
-# This is a bit more unique. Let's define what this means.
-# A "run" is a sequence of consecutive increases or decreases.
+pass
 
-def analyze_runs(data: pd.Series) -> tuple[list, list]:
-    """
-    Analyzes a time-series to identify and measure upward and downward runs.
-    
-    A "run" is a sequence of consecutive price changes in the same direction.
-    
-    Args:
-        data (pd.Series): A pandas Series of prices.
-        
-    Returns:
-        tuple[list, list]: A tuple containing two lists:
-            - A list of upward run lengths.
-            - A list of downward run lengths.
-    """
-    # TODO: Implement the run analysis logic.
-    # You'll likely iterate through the series or use a vectorized pandas approach.
-    pass
-
-# --- 5. Main Execution Block (for testing) ---
+# --- TESTING ---
 # This block allows you to run the file directly to test the functions.
 
 if __name__ == '__main__':
     # Create some sample data
-    sample_data = pd.Series([
-        10, 11, 12, 11.5, 10.8, 10.9, 11, 12, 13, 12.5,
-        13, 14, 15, 14.5, 14, 13.5, 13, 12, 11.5, 12
-    ])
+    file_path = ''
+    sample_data = pd.read_csv(file_path, parse_dates=['date'], index_col='date')
     
-    print("--- Sample Data ---")
-    print(sample_data)
-    print("\n" + "="*30 + "\n")
 
-    # Test SMA function
-    print("--- Testing SMA ---")
-    sma_values = calculate_sma(sample_data, window=5)
-    print("SMA(5):\n", sma_values)
-    print("\n" + "="*30 + "\n")
-
-    # Test RSI function
-    print("--- Testing RSI ---")
-    rsi_values = calculate_rsi(sample_data, window=5) # Use a smaller window for this sample
-    print("RSI(5):\n", rsi_values)
-    print("\n" + "="*30 + "\n")
-    
     # Test Run Analysis
-    print("--- Testing Run Analysis ---")
-    upward_runs, downward_runs = analyze_runs(sample_data)
-    print("Upward Run Lengths:", upward_runs)
-    print("Downward Run Lengths:", downward_runs)
-    print("\n" + "="*30 + "\n")
+    print("--- Testing Run Analysis for AMZN ---")
+    prices = get_closing_prices(sample_data, "AMZN")
+    
+    runs_df, direction = calculate_runs() 
+    # Can use this to extract notable_up_runs or notable_down_runs
+    significant_runs = get_significant_runs(runs_df)
+    print(f"Significant up runs: {significant_runs['up_runs']}")   
+    print(f"Significant up runs: {significant_runs['down_runs']}") 
+    

@@ -13,6 +13,7 @@ def data_handler(
     #   filterName: List of Names to filter, e.g filterName = ['AAPL', 'AMZN', 'GOOG', 'MSFT']
     df = pd.read_csv(filepath)
 
+
     # Remove Missing Values
     df.dropna(inplace=True)
 
