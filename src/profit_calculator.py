@@ -1,6 +1,6 @@
 # Module: profit_calculator.py
 # Author: Liao Xue E
-# Date: 20/9/2025
+# Date: 21/9/2025
 
 from typing import List, Union
 import pandas as pd
@@ -9,9 +9,6 @@ def calculate_max_profit(prices: Union[List[float], pd.Series]) -> float:
     """
     Calculates maximum profit achievable through multiple buy/sell transactions
     using the Valley-Peak approach (Greedy Algorithm).
-    
-    Time Complexity: O(n) where n is number of prices
-    Space Complexity: O(1)
     
     Args:
         prices: List or Series of stock prices
