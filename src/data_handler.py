@@ -14,6 +14,7 @@ def data_handler(
     #   filterTime: Tuple of (start_year, end_year) to filter, e.g filterTime = (2015, 2020)
     df = pd.read_csv(filepath)
 
+
     # Remove Missing Values
     df.dropna(inplace=True)
 
