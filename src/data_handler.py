@@ -11,6 +11,7 @@ def data_handler(
     # Parameters:
     #   filepath: path to CSV file
     #   filterName: List of Names to filter, e.g filterName = ['AAPL', 'AMZN', 'GOOG', 'MSFT']
+    #   filterTime: Tuple of (start_year, end_year) to filter, e.g filterTime = (2015, 2020)
     df = pd.read_csv(filepath)
 
     # Remove Missing Values
