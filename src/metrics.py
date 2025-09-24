@@ -107,8 +107,8 @@ pass
 
 if __name__ == '__main__':
     # Create some sample data
-    file_path = ''
-    sample_data = pd.read_csv(file_path, parse_dates=['date'], index_col='date')
+    filepath = ''
+    sample_data = pd.read_csv(filepath, parse_dates=['date'], index_col='date')
     
 
     # Test Run Analysis
