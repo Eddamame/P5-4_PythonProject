@@ -1,8 +1,8 @@
 # File: main.py
-# import pandas as pd
+import pandas as pd
 from src.data_handler import data_handler
 from src.visualization import plot_price_and_sma
-
+from src.prediction import forecast_regression, validate_regression
 
 def main():
     filepath = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
@@ -15,17 +15,21 @@ def main():
     window_size = int(input("Enter SMA window size (e.g., 50): "))
     # Plot the price and SMA
     plot_price_and_sma(stock_name, window_size)
-    print(df.head(5))
 
-    x = df['low'].iloc[:-1].values.tolist()
-    y = df['close'].iloc[1:].values.tolist()
+    # Forecast 10 days ahead
+    forecast_table = forecast_regression(df, target="close", days_ahead=7, show_graph=True)
 
-    slope, intercept = slr(x, y)
-    print(f"Slope: {slope:.4f}, Intercept {intercept: {intercept:.4f}}")
+    print("\nForecast Table:")
+    print(forecast_table)
 
-    last_low = df['low'].iloc[-1]
-    prediction = predict([last_low], slope, intercept)[0]
+    #Validation of regression
+    theta, y_test, y_pred = validate_regression(df, target="close", train_ratio=0.7)
+    results = pd.DataFrame({
+        "Actual": y_test,
+        "Predicted": y_pred,
+        "Error": y_test - y_pred
+    })
+    print(results)
 
-    print(prediction)
 if __name__ == "__main__":
     main()
