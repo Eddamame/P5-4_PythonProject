@@ -14,6 +14,7 @@ stock_name = pd.unique(df['Name'])
 def calculate_sma(stock_name, window_size):
     # Filter the DataFrame for the selected stock
     filtered_df = df[(df['Name'] == stock_name) & (df['year'] > 2015)].copy()
+    # set index to date
     filtered_df = filtered_df.set_index('date')
     closed_price = filtered_df['close'].tolist()
   
