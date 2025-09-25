@@ -1,6 +1,6 @@
 # Use this for your visualization functions 
 import matplotlib.pyplot as plt
-from src.sma import calculate_sma  
+from sma import calculate_sma  
 
 def plot_price_and_sma(stock_name, window_size):
     # Calculate SMA 
@@ -74,3 +74,4 @@ def plot_runs(prices, runs_df, min_length=5):
     
     plt.tight_layout()
     plt.show()
+

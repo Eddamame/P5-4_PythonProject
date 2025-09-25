@@ -7,12 +7,12 @@ analyzing time-series data, particularly for financial metrics.
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import datetime as dt 
 from data_handler import data_handler
 import pandas as pd
 from typing import Optional
 from typing import List, Union
+
+
 
 # --- SMA Analysis ---
 
@@ -80,20 +80,6 @@ def calculate_max_profit(prices: Union[List[float], pd.Series]) -> float:
  
 # --- Upward and Downward Run Analysis ---
 
-# First, filter out prices solely based on ticker name
-# get the closing prices 
-
-# def get_closing_prices(data, ticker=None):
-#     """
-#     Returns closing prices for the whole DataFrame or for a specific ticker.
-#     """
-#     if ticker:
-#         filtered = data[data["Name"] == ticker]
-#         return filtered["close"]
-#     else:
-#         return data["close"]
-
-
 def calculate_runs(data):
     try:
         # Check if required columns exist
@@ -102,10 +88,10 @@ def calculate_runs(data):
         if 'close' not in data.columns:
             raise ValueError("'close' column not found in dataframe")
         
-        # Select the required columns
+        # Select the required columns and copy
         prices = data[['date', 'close']].copy()
         
-        # Ensure we have data
+        # Check if we have data
         if len(prices) == 0:
             raise ValueError("No data available")
         
@@ -170,9 +156,6 @@ def calculate_runs(data):
     except Exception as e:
         print(f"Unexpected error in calculate_runs: {e}")
         return pd.DataFrame(), []
-  
-
-    
 
     
 def get_significant_runs(runs_df, min_length=5):
@@ -186,9 +169,6 @@ def get_significant_runs(runs_df, min_length=5):
         'down_runs': down_runs
     }
 
-
-
-pass
 
 # --- TESTING ---
 # This block allows you to run the file directly to test the functions.
@@ -210,4 +190,6 @@ if __name__ == '__main__':
     significant_runs = get_significant_runs(runs_df, 7)
     print(f"Significant up runs: {significant_runs['up_runs']}")   
     print(f"Significant up runs: {significant_runs['down_runs']}") 
+    
+       
     
