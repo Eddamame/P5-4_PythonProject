@@ -13,7 +13,6 @@ def data_handler(
     #   filterName: List of Names to filter, e.g filterName = ['AAPL', 'AMZN', 'GOOG', 'MSFT']
     df = pd.read_csv(filepath)
 
-
     # Remove Missing Values
     df.dropna(inplace=True)
 
@@ -38,5 +37,8 @@ def data_handler(
     # Sort by name and date, then reset index & drop previous dataframe
     df.sort_values(by=['Name', 'date'], inplace=True)
     df.reset_index(drop=True, inplace=True)
-
     return df
+
+file_path = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
+filterName = ['AMZN']
+data_handler(file_path, filterName)
