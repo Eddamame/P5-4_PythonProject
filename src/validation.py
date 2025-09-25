@@ -10,11 +10,11 @@ from datetime import datetime, timedelta
 
 # Importing all other team members' modules
 try:
-    from src.data_handler import data_handler
-    from src.sma import calculate_sma
-    from src.metrics import get_closing_prices, get_significant_runs   
-    from src.daily_return import calculate_daily_returns
-    from src.profit_calculator import calculate_max_profit
+    from data_handler import data_handler
+    from sma import calculate_sma
+    from metrics import get_closing_prices, get_significant_runs   
+    from daily_return import calculate_daily_returns
+    from profit_calculator import calculate_max_profit
     print("All team members' modules are imported successfully and validated!")
 except ImportError as e:
     print(f"Error importing modules: {e}")
@@ -28,7 +28,7 @@ def create_test_data():
     test_data = []
 
     # AAPL data with some flunctuations
-    aapl_prices = [150, 152, 151, 153, 155, 154, 156, 158, 157, 159, 160, 162, 161, 163, 165, 164, 166]
+    aapl_prices = [150, 152, 151, 153, 155, 154, 156, 158, 157, 159, 160, 162, 161, 163, 165, 164, 166, 168, 167, 169]
 
     for i, date in enumerate(dates):
         price = aapl_prices[i]
@@ -43,7 +43,7 @@ def create_test_data():
             })
         
     # MSFT data with some flunctuations
-    msft_prices = [300, 302, 301, 303, 305, 304, 306, 308, 307, 309, 310, 312, 311, 313, 315, 314, 316]
+    msft_prices = [300, 302, 301, 303, 305, 304, 306, 308, 307, 309, 310, 312, 311, 313, 315, 314, 316, 318, 317, 319]
 
     for i, date in enumerate(dates):
         price = msft_prices[i]
@@ -284,7 +284,7 @@ def validate_runs_analysis():
     return tests
 
 def calculate_runs_wrapper(prices):
-    """Wrapper for Member 3's calculate_runs function to fix the missing prices parameter"""
+    # Wrapper for calculate_runs function to fix the missing prices parameter"""
     changes = prices.diff()
     direction = np.where(changes > 0, 1, np.where(changes < 0, -1, 0))
     
