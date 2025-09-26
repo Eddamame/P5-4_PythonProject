@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> S&P Top 10</title>
+</head>
+<body>
+    <!-- Placehoder title-->
+    <h1> S&P Top 10 </h1>
+    <p> Dive into a real time stock analysis with any of the TOP 10 Stocks in the S&P 500  </p>
+    <!-- This is the form we can use to feed into our routes.py-->
+    <form method="POST" action="/analyze">
+    <label for="stock_symbol">Select a Stock:</label>
+    <select id="stock_symbol" name="symbol">
+        {% for stock in stocks %}
+            <option value="{{ stock }}">{{ stock }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Analyze Stock</button>
+</form>
+</body>
+</html>
