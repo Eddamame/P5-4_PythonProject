@@ -39,5 +39,6 @@ def data_handler(
     # Sort by name and date, then reset index & drop previous dataframe
     df.sort_values(by=['Name', 'date'], inplace=True)
     df.reset_index(drop=True, inplace=True)
+    
 
     return df

@@ -10,11 +10,11 @@ from datetime import datetime, timedelta
 
 # Importing all other team members' modules
 try:
-    from src.data_handler import data_handler
-    from src.sma import calculate_sma
-    from src.metrics import get_closing_prices, get_significant_runs   
-    from src.daily_return import calculate_daily_returns
-    from src.profit_calculator import calculate_max_profit
+    from data_handler import data_handler
+    from sma import calculate_sma
+    from metrics import get_closing_prices, get_significant_runs   
+    from daily_return import calculate_daily_returns
+    from profit_calculator import calculate_max_profit
     print("All team members' modules are imported successfully and validated!")
 except ImportError as e:
     print(f"Error importing modules: {e}")
@@ -147,7 +147,7 @@ def validate_data_handler():
 
 
 
-# Testing SMA Module for Si Yuan
+# Testing SMA Module for Si Yun
 
 def validate_sma_calculation():
     # Test SMA calculation function

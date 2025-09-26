@@ -15,7 +15,7 @@ def main():
     window_size = int(input("Enter SMA window size (e.g., 50): "))
     # Plot the price and SMA
     plot_price_and_sma(stock_name, window_size)
-
+    
     # Forecast 10 days ahead
     forecast_table = forecast_regression(df, target="close", days_ahead=7, show_graph=True)
 
