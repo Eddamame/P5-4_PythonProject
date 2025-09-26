@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Union
 import matplotlib.pyplot as plt
 from .sma import calculate_sma  
-from metrics import calculate_max_profit
+from .metrics import calculate_max_profit
 
 def plot_price_and_sma(stock_name, window_size):
     # Calculate SMA 
