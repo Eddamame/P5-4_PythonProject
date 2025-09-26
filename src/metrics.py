@@ -172,6 +172,22 @@ def get_significant_runs(runs_df, min_length=5):
 # --- TESTING ---
 # This block allows you to run the file directly to test the functions.
 
+# if __name__ == '__main__':
+#     # Create some sample data
+#     filepath = ''
+#     sample_data = pd.read_csv(filepath, parse_dates=['date'], index_col='date')
+    
+
+#     # Test Run Analysis
+#     print("--- Testing Run Analysis for AMZN ---")
+#     prices = get_closing_prices(sample_data, "AMZN")
+    
+#     runs_df, direction = calculate_runs() 
+#     # Can use this to extract notable_up_runs or notable_down_runs
+#     significant_runs = get_significant_runs(runs_df)
+#     print(f"Significant up runs: {significant_runs['up_runs']}")   
+#     print(f"Significant up runs: {significant_runs['down_runs']}") 
+    
 if __name__ == '__main__':
     # Create some sample data
     file_path = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'

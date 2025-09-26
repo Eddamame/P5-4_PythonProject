@@ -1,5 +1,5 @@
 # File: main.py
-# import pandas as pd
+import pandas as pd
 from src.data_handler import data_handler
 from src.visualization import plot_price_and_sma, plot_max_profit_segments
 

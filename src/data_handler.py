@@ -11,17 +11,21 @@ def data_handler(
     # Parameters:
     #   filepath: path to CSV file
     #   filterName: List of Names to filter, e.g filterName = ['AAPL', 'AMZN', 'GOOG', 'MSFT']
+    #   filterTime: Tuple of (start_year, end_year) to filter, e.g filterTime = (2015, 2020)
     df = pd.read_csv(filepath)
+
+    # Standardize column names to lowercase
+    df.columns = [col.lower() for col in df.columns]
 
     # Remove Missing Values
     df.dropna(inplace=True)
 
     # Filter specific Names
     if filterName:
-        df = df[df['Name'].isin(filterName)]
+        df = df[df['name'].isin(filterName)]
 
     # Ensure correct data-types, raise errors if encountered
-    df['Name'] = df['Name'].astype(str)
+    df['name'] = df['name'].astype(str)
     df['date'] = pd.to_datetime(df['date'], errors='raise')
     for col in 'open','close','high','low','volume':
         df[col] = pd.to_numeric(df[col],errors='raise')
@@ -35,10 +39,6 @@ def data_handler(
     df = df.round({'open': 2, 'high': 2, 'low': 2, 'close': 2})
 
     # Sort by name and date, then reset index & drop previous dataframe
-    df.sort_values(by=['Name', 'date'], inplace=True)
+    df.sort_values(by=['name', 'date'], inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
-
-file_path = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
-filterName = ['AMZN']
-data_handler(file_path, filterName)
