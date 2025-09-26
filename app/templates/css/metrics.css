@@ -1,0 +1,8 @@
+  .form-group {
+    margin-bottom: 10px; /* spacing between rows */
+  }
+
+  .form-group label {
+    display: block;      /* forces label onto its own line */
+    margin-bottom: 5px;  /* small gap between label and dropdown */
+  }
