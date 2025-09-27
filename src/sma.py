@@ -9,13 +9,16 @@ df=data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/S
 df['year'] = pd.DatetimeIndex(df['date']).year
 
 # filter out the Name 
-stock_name = pd.unique(df['name'])
-#user imput of the stock 
+stock_name = pd.unique(df['Name'])
+#user input of the stock 
+
 def calculate_sma(stock_name, window_size):
     # Filter the DataFrame for the selected stock
-    filtered_df = df[(df['name'] == stock_name) & (df['year'] > 2015)].copy()
+    filtered_df = df[(df['Name'] == stock_name) & (df['year'] > 2015)].copy()
+
+    # set index to date
     filtered_df = filtered_df.set_index('date')
-    closed_price = filtered_df['close'].tolist()
+    closed_price = filtered_df['close']
   
     i=0
     # Initialize an empty list to store simple moving averages

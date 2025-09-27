@@ -1,13 +1,35 @@
+# basic html for stock analysis website 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> S&P Top 10</title>
+    <title>Home</title>
+    <link rel="stylesheet" href="css/css_reset.css">
+    <link rel="stylesheet" href="css/global.css">
+ 
+
 </head>
+
 <body>
-    <!-- Placehoder title-->
-    <h1> S&P Top 10 </h1>
+    <header>
+        <img id="logo" src="images/logo.png" alt=”Logo”>
+        <nav>
+            <label for="hamburger">&#9776;</label>
+            <input type="checkbox" id="hamburger" />
+            <ul id="menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="metrics.html">Metrics</a></li>
+                <li><a href="results.html">Result</a></li>
+            </ul>
+        </nav>
+        <hr>
+    </header>
+
+    <section id="main">
+      <h1> S&P Top 10 </h1>
     <p> Dive into a real time stock analysis with any of the TOP 10 Stocks in the S&P 500  </p>
     <!-- This is the form we can use to feed into our routes.py-->
     <form method="POST" action="/analyze">
@@ -19,5 +41,12 @@
     </select>
     <button type="submit">Analyze Stock</button>
 </form>
+      
+    </section>
+   
+    <footer>
+        <hr>
+        &copy; Stock Analysis. All rights reserved.
+    </footer>
+
 </body>
-</html>
