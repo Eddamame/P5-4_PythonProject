@@ -1,7 +1,7 @@
 # File: main.py
-# import pandas as pd
+import pandas as pd
 from src.data_handler import data_handler
-from src.visualization import plot_price_and_sma
+from src.visualization import plot_price_and_sma, plot_max_profit_segments
 
 
 def main():
@@ -16,6 +16,7 @@ def main():
     window_size = [int(x.strip()) for x in window_size]
     # Plot the price and SMA
     plot_price_and_sma(stock_name, window_size)
+    plot_max_profit_segments(df['close']) 
     print(df.head(5))
 if __name__ == "__main__":
     main()

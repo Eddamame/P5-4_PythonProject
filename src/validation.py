@@ -1,12 +1,12 @@
+import pandas as pd
+import numpy as np
+import sys
+import os
+from datetime import datetime, timedelta
+
 # Author: Lideon
 # Date: 21-09-2025
 # Description: This module contains functions for validating all of the members' functions and user inputs etc.
-
-import pandas as pd
-import numpy as np
-import sys  
-import os
-from datetime import datetime, timedelta
 
 # Importing all other team members' modules
 try:
@@ -147,7 +147,7 @@ def validate_data_handler():
 
 
 
-# Testing SMA Module for Si Yuan
+# Testing SMA Module for Si Yun
 
 def validate_sma_calculation():
     # Test SMA calculation function

@@ -1,42 +1,31 @@
-# Predictive Modelling Notes
+import numpy as np
 
-# Simple Linear Regression
-# Independent Variable vs Dependent Variable
-# Independent Variables = 'open', 'high', 'low', 'volume' 
-# Dependent Variables = 'close'
+# Predictive Modelling
 
-#Variables -- not sure if good to keep to calculate or just use df['column']
-def x():
-    return sum(df['low'])
+def slr(x: list[float], y: list[float]) -> tuple[float, float]:
+    # Parameters:
+    #   x = independent variable 
+    #   y = dependent variable (the one you want to predict)
+    n = len(x)
+    if n!= len(y):
+        raise ValueError("x and y must have the same number of rows")
+    if n == 0:
+        raise ValueError("No values found")
+    
+    #Calculate mean for both x and y
+    x_mean = sum(x)/n
+    y_mean = sum(y)/n
 
-def y():
-    return sum(df['close'])
+    numerator = sum((xi - x_mean) * (yi - y_mean) for xi, yi in zip(x, y))
+    denominator = sum((xi - x_mean) ** 2 for xi in x)
 
-# Calculate mean
-def mean_x():
-    return sum(df['low'])/len(df['low'])
+    if denominator == 0:
+        raise ValueError("Cannot compute slope (all x values identical)")
+    
+    slope = numerator / denominator
+    intercept = y_mean - slope * x_mean
 
-def mean_y():
-    return y()/len(df['close'])
-# Calculate x - mean-x, y - mean-y
-def x_mean_x():
-    pass
+    return slope, intercept
 
-def y_mean_y():
-    pass
-# Calculate (x - mean-x)^2 and (x - mean-x)(y - mean-y)
-# Calculate predicted y = b0-intercept + b1-slope * x
-#   value of b1-slope: (sum(x - mean-x)(y - mean-y)) / sum(x - mean-x)^2
-#   value of b0-intercept: using formula: predicted-y = b0-intercept + b1-slope * mean-x
-# Draw best fit line
-# Calculate R-squared
-#   calculate SSE & SSR
-
-# Check Correlation between variables
-variables =  ['close', 'open', 'low', 'high', 'volume']
-corr_matrix = df[variables].corr()
-print
-# Since 'low' has the highest correlation, we will take 'low' as the independent variable
-
-print('Mean of x is: ',mean_x())
-print('Mean of y is: ',mean_y())
+def predict(x_new: list[float], slope: float, intercept: float) -> list[float]:
+    return [slope * xi + intercept for xi in x_new]
