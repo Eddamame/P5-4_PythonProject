@@ -1,7 +1,7 @@
 #Import Libraries
 import pandas as pd
 from datetime import datetime,timedelta
-from data_handler import data_handler
+from .data_handler import data_handler
 import time
 import numpy as np
 df =data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true')
@@ -16,7 +16,7 @@ def calculate_sma(stock_name, window_size):
     filtered_df = df[(df['Name'] == stock_name) & (df['year'] > 2015)].copy()
     # set index to date
     filtered_df = filtered_df.set_index('date')
-    closed_price = filtered_df['close'].tolist()
+    closed_price = filtered_df['close']
   
     i=0
     # Initialize an empty list to store simple moving averages
