@@ -7,7 +7,7 @@ analyzing time-series data, particularly for financial metrics.
 
 import pandas as pd
 import numpy as np
-from data_handler import data_handler
+from src.data_handler import data_handler
 from typing import Optional
 from typing import List, Union
 
