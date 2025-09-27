@@ -10,12 +10,13 @@ df['year'] = pd.DatetimeIndex(df['date']).year
 
 # filter out the Name 
 stock_name = pd.unique(df['Name'])
-#user imput of the stock 
+#user input of the stock 
 def calculate_sma(stock_name, window_size):
     # Filter the DataFrame for the selected stock
     filtered_df = df[(df['Name'] == stock_name) & (df['year'] > 2015)].copy()
+    # set index to date
     filtered_df = filtered_df.set_index('date')
-    closed_price = filtered_df['close'].tolist()
+    closed_price = filtered_df['close']
   
     i=0
     # Initialize an empty list to store simple moving averages

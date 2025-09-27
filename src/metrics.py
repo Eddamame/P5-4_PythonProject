@@ -7,14 +7,34 @@ analyzing time-series data, particularly for financial metrics.
 
 import pandas as pd
 import numpy as np
-from data_handler import data_handler
+from .data_handler import data_handler
+import pandas as pd
 from typing import Optional
 from typing import List, Union
 
 
 
 # --- SMA Analysis ---
+df =data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true')
+# Create a new column year
+df['year'] = pd.DatetimeIndex(df['date']).year
+# filter out the Name 
+stock_name = pd.unique(df['Name'])
+def calculate_sma(stock_name, window_sizes):
+    filtered_df = df[(df['Name'] == stock_name) & (df['year'] > 2015)].copy()
+    filtered_df = filtered_df.set_index('date')
+    closed_price = filtered_df['close']
+    for n in window_sizes:
+        sma = []
+        for i in range(len(closed_price)):
+                if i < n - 1:
+                    sma.append(None)  # Always create the column
+                else:
+                    window = closed_price[i - n + 1 : i + 1]
+                    sma.append(round(sum(window)/n, 2))
+        filtered_df[f'sma_{n}'] = sma  # Column always exists
 
+    return filtered_df
 
 # --- Daily Returns --- 
 def calculate_daily_returns(data: pd.DataFrame, stock_name: Optional[str] = None) -> Optional[pd.DataFrame]:
