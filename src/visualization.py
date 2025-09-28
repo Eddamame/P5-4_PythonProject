@@ -2,7 +2,6 @@
 import pandas as pd
 from typing import Union
 import matplotlib.pyplot as plt
-
 import plotly.express as px 
 from .metrics import calculate_sma, calculate_max_profit  
 
@@ -131,31 +130,4 @@ def plot_max_profit_segments(prices: Union[pd.Series, list]):
     plt.legend()
     plt.grid(alpha=0.3)
     plt.tight_layout()
-    plt.show()
-
-def plot_predictions(data, predictions, target_column):
-    """
-    Plot the historical data and future predictions.
-
-    Args:
-    - data (pd.DataFrame): Historical stock data with a 'date' column.
-    - predictions (pd.DataFrame): Future predictions with 'date' and target column.
-    - target_column (str): The column name to plot (e.g., 'close').
-    """
-    # Combine the last 30 days of historical data with predictions
-    plot_data = data[-30:]  # Last 30 days
-    plt.figure(figsize=(12, 6))
-
-    # Plot historical data
-    plt.plot(plot_data['date'], plot_data[target_column], label="Historical Data", marker='o')
-
-    # Plot predictions
-    plt.plot(predictions['date'], predictions[target_column], label="Predictions", marker='x', linestyle='--')
-
-    # Add labels and legend
-    plt.title("Stock Price Prediction")
-    plt.xlabel("Date")
-    plt.ylabel(target_column.capitalize())
-    plt.legend()
-    plt.grid(True)
     plt.show()
