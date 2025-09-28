@@ -19,9 +19,9 @@ df =data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/
 # Create a new column year
 df['year'] = pd.DatetimeIndex(df['date']).year
 # filter out the Name 
-stock_name = pd.unique(df['Name'])
+stock_name = pd.unique(df['name'])
 def calculate_sma(stock_name, window_sizes):
-    filtered_df = df[(df['Name'] == stock_name) & (df['year'] > 2015)].copy()
+    filtered_df = df[(df['name'] == stock_name) & (df['year'] > 2015)].copy()
     filtered_df = filtered_df.set_index('date')
     closed_price = filtered_df['close']
     for n in window_sizes:
@@ -42,14 +42,14 @@ def calculate_daily_returns(data: pd.DataFrame, stock_name: Optional[str] = None
     # Formula: Daily Return = (Today's Close - Yesterday's Close) / Yesterday's Close    Args:
     # data (pd.DataFrame): DataFrame containing stock data with a 'Close' column
     try:
-        required_cols = ['Name', 'date', 'close']
+        required_cols = ['name', 'date', 'close']
         if not all(col in data.columns for col in required_cols):
             raise ValueError(f"DataFrame must contain columns: {required_cols}")
         
         if stock_name:
-            if stock_name not in data['Name'].unique():
+            if stock_name not in data['name'].unique():
                 raise ValueError(f"Stock '{stock_name}' not found in data")
-            stock_data = data[data['Name'] == stock_name].copy()
+            stock_data = data[data['name'] == stock_name].copy()
         else:
             stock_data = data.copy()
         
