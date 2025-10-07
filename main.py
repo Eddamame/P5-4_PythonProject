@@ -4,6 +4,7 @@
 # from src.visualization import plot_price_and_sma, plot_max_profit_segments
 # from src.prediction import validate_and_plot, predict_next_day, plot_actual_prices
 from app.modules.data_fetcher import get_hist_data
+from app.modules.data_handler import api_data_handler
 # def main():
 #     filepath = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
 #     # FilterName and filterTime is optional
@@ -32,3 +33,5 @@ from app.modules.data_fetcher import get_hist_data
 
 data = get_hist_data('AAPL', '3mo')
 print(data)
+clean_data = api_data_handler(data)
+print(clean_data)

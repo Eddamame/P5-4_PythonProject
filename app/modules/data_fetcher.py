@@ -11,6 +11,12 @@ def get_hist_data(ticker, period):
         # check if the DataFrame is empty 
         if stock_df.empty:
             raise ValueError(f"No data found for Ticker: {ticker} and Period: {period}. Check for invalid ticker or period string.")
+        
+        # handle Potential MultiIndex (PREVENTS TUPLE ERROR)
+        # Flatten the columns if yfinance returns a MultiIndex.
+        if isinstance(stock_df.columns, pd.MultiIndex):
+            # Select the top level (index 0) which corresponds to 'Open', 'High', etc.
+            stock_df.columns = stock_df.columns.get_level_values(0)
 
         # reset the index to turn the 'Date' index into a column
         stock_df = stock_df.reset_index()
