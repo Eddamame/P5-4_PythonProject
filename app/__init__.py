@@ -1,25 +1,20 @@
+# P5-4_PythonProject/app/__init__.py
+
 from flask import Flask
-import logging 
-from app import routes
-
-# Initialize the app
-app = Flask(__name__)
-
-def configure_logging():
-    # Set up handlers, formatters, and set the root logger level
-    logging.basicConfig(level=logging.INFO, ...)
 
 def create_app():
-    # First step: configure logging
-    configure_logging() 
-    
-    # Second step: create the Flask instance
     app = Flask(__name__)
+
+    # ... app configuration (e.g., app.config, secret key) ...
     
-    # Third step: register modules/blueprints
-    from .routes import main as main_blueprint
+    # 1. IMPORT the routes module from the local package
+    # The leading dot (.) indicates a relative import within the 'app' package.
+    from . import routes 
+    
+    # Alternatively, and often clearer if using Blueprints directly:
+    from .routes import main as main_blueprint 
+    
+    # 2. REGISTER the Blueprint with the application instance
     app.register_blueprint(main_blueprint)
-    
+
     return app
-
-
