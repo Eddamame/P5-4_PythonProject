@@ -102,6 +102,7 @@ def calculate_max_profit(data: pd.DataFrame, stock_name: str,
 # --- Upward and Downward Run Analysis ---
 
 def calculate_runs(data):
+    """Optimized version with datetime handling"""
     try:
         # Check if required columns exist
         if 'date' not in data.columns:
@@ -109,34 +110,36 @@ def calculate_runs(data):
         if 'close' not in data.columns:
             raise ValueError("'close' column not found in dataframe")
         
-        # Select the required columns and copy
+        # Select required columns and copy
         prices = data[['date', 'close']].copy()
+        
+        # Convert date to datetime if not already
+        if not pd.api.types.is_datetime64_any_dtype(prices['date']):
+            prices['date'] = pd.to_datetime(prices['date'])
         
         # Check if we have data
         if len(prices) == 0:
             raise ValueError("No data available")
         
-        # Calculate daily changes in closing prices (only on the 'close' column)
+        # Calculate daily changes
         close_changes = prices['close'].diff()
         
-        # Convert to direction: upward, no change, downward (1, 0, -1)
-        direction = np.where(close_changes > 0, 1, np.where(close_changes < 0, -1, 0))
+        # Convert to direction: 1 (up), -1 (down), 0 (no change)
+        direction = np.sign(close_changes)
+        direction = direction.fillna(0).astype(int)
         
         # Initialize run tracking
         runs = []
         current_run_length = 1
-        
-        # Prevent IndexError
-        current_direction = direction[0] if len(direction) > 0 else 0
+        current_direction = direction.iloc[0]
         
         # Iterate through directions to find runs
         for i in range(1, len(direction)):
-            if direction[i] == current_direction and direction[i] != 0:
-                # Continue current run
+            if direction.iloc[i] == current_direction and current_direction != 0:
                 current_run_length += 1
             else:
-                # End current run, start new one
-                if current_direction != 0:  # Don't track zero runs
+                # Record the completed run
+                if current_direction != 0:
                     start_idx = i - current_run_length
                     end_idx = i - 1
                     
@@ -150,9 +153,9 @@ def calculate_runs(data):
                     })
                 
                 current_run_length = 1
-                current_direction = direction[i]
+                current_direction = direction.iloc[i]
         
-        # Close the loop, record the final run
+        # Record the final run
         if current_direction != 0:
             start_idx = len(prices) - current_run_length
             end_idx = len(prices) - 1
@@ -166,29 +169,26 @@ def calculate_runs(data):
                 'end_index': end_idx
             })
         
-        return pd.DataFrame(runs), direction
+        return pd.DataFrame(runs), direction, prices
         
-    except KeyError as e:
-        print(f"Column error: {e}")
-        return pd.DataFrame(), []
-    except ValueError as e:
-        print(f"Data error: {e}")
-        return pd.DataFrame(), []
     except Exception as e:
-        print(f"Unexpected error in calculate_runs: {e}")
-        return pd.DataFrame(), []
+        print(f"Error in calculate_runs: {e}")
+        return pd.DataFrame(), np.array([]), pd.DataFrame()
 
-    
-def get_significant_runs(runs_df, min_length=5):
-    # To filter out runs based on length depending on trading methodology
+
+# this is a quick view of runs that have reached min length 
+def get_significant_runs(runs_df, min_length=4):
+    #Filter runs by minimum length
     significant = runs_df[runs_df['length'] >= min_length]
     up_runs = significant[significant['direction'] == 'Up']
     down_runs = significant[significant['direction'] == 'Down']
 
     return {
         'up_runs': up_runs,
-        'down_runs': down_runs
+        'down_runs': down_runs,
+        'significant_runs': significant 
     }
+
 
 
 # --- TESTING ---

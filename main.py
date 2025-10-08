@@ -6,6 +6,9 @@
 #Run main to test both graphs
 from src.visualization import plot_daily_returns_plotly, plot_max_profit_segments
 
+from app.modules.metrics import calculate_runs, get_significant_runs
+from app.modules.visualization import plot_price_and_sma, plot_max_profit_segments, plot_runs
+# from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
 from app.modules.data_fetcher import get_hist_data
 from app.modules.data_handler import api_data_handler
 # def main():
@@ -34,8 +37,7 @@ from app.modules.data_handler import api_data_handler
 # if __name__ == "__main__":
 #     main()
 
-data = get_hist_data('AAPL', '3mo')
-print(data)
+data = get_hist_data('AAPL', '12mo')
 clean_data = api_data_handler(data)
 print(clean_data)
 
@@ -46,3 +48,11 @@ data['name'] = 'AAPL'
 
 plot_daily_returns_plotly(data, stock_name='AAPL')
 plot_max_profit_segments(data, stock_name='AAPL')
+runs_df, direction, prices = calculate_runs(clean_data)
+# result = get_significant_runs(runs_df, 5)
+# print(result['significant_runs'] )
+
+my_plot = plot_runs(runs_df, prices, 6)
+if my_plot is not None:
+    my_plot.show()
+

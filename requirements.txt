@@ -1,0 +1,10 @@
+Flask
+gunicorn
+pandas
+tenacity
+yfinance
+requests
+numpy
+scikit-learn
+matplotlib
+plotly

@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 
-
+# this handles csv files 
 def data_handler(
         filepath: str, 
         filterName: list[str] | None = None,
@@ -43,6 +43,7 @@ def data_handler(
     df.reset_index(drop=True, inplace=True)
     return df
 
+# this handles pd dataframes from API 
 def api_data_handler(
         y_data, 
         filterTime: tuple[int, int] | None = None
