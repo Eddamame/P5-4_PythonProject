@@ -1,10 +1,13 @@
 # Use this for your visualization functions 
 import pandas as pd
+import plotly.graph_objects as go
 from typing import Union
 import matplotlib.pyplot as plt
 import plotly.express as px 
 from .metrics import calculate_sma, calculate_max_profit  
 
+
+# --- plot SMA using plotly ---
 
 def plot_price_and_sma(stock_name, window_size):
     df = calculate_sma(stock_name, window_size)
@@ -21,59 +24,72 @@ def plot_price_and_sma(stock_name, window_size):
 
     fig.show()
 
+# --- plot runs using plotly ---
 
-'''
-takes in 3 arguments 
-- prices comes from get_closing_prices(),
-- runs_df comes from calculate_runs(), 
-- min_length is up to user 
-'''
+# green for upward, red for downward
+# takes in runs_df and prices from calculate_runs
+# takes in a user input value for min_length
 
-def plot_runs(prices, runs_df, min_length=5):
+def plot_runs(runs_df, prices, min_length=4):
+
+    if prices.empty:
+        print("No data to plot")
+        return None
     
-    plt.figure(figsize=(14, 8))
+    # Create the figure
+    fig = go.Figure()
     
-    # Plot price line
-    plt.plot(prices.index, prices.values, 'black', linewidth=1, alpha=0.7)
+    # Add the main price line (all data in gray)
+    fig.add_trace(go.Scatter(
+        x=prices['date'],
+        y=prices['close'],
+        mode='lines',
+        line=dict(color='lightgray', width=2),
+        name='Close Price',
+        showlegend=True
+    ))
     
     # Filter significant runs
     significant_runs = runs_df[runs_df['length'] >= min_length]
     
-    # Draw colored lines for significant runs
-    for i, run in significant_runs.iterrows():
+    # Color code only the significant runs
+    for _, run in significant_runs.iterrows():
         start_idx = run['start_index']
         end_idx = run['end_index']
         
-        # Get the price segment for this run
-        run_dates = prices.index[start_idx:end_idx+1]
-        run_prices = prices.iloc[start_idx:end_idx+1]
+        # Get the segment data
+        segment = prices.iloc[start_idx:end_idx+1]
         
-        # Choose color and draw thick line
         color = 'green' if run['direction'] == 'Up' else 'red'
-        plt.plot(run_dates, run_prices, color=color, linewidth=4, alpha=0.8)
         
-        # Add run length label
-        mid_idx = start_idx + (end_idx - start_idx) // 2
-        plt.annotate(f"{run['length']}", 
-                    xy=(prices.index[mid_idx], prices.iloc[mid_idx]),
-                    xytext=(0, 15), textcoords='offset points',
-                    ha='center', fontsize=10, fontweight='bold',
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor=color, alpha=0.7))
+        fig.add_trace(go.Scatter(
+            x=segment['date'],
+            y=segment['close'],
+            mode='lines',
+            line=dict(color=color, width=3),
+            name=f"{run['direction']} Run",
+            showlegend=False,
+            hovertemplate=f"<b>{run['direction']} Run</b><br>" +
+                         f"Length: {run['length']} days<br>" +
+                         "Date: %{x}<br>" +
+                         "Price: %{y:.2f}<br>" +
+                         "<extra></extra>"
+        ))
     
-    plt.title(f'Stock Runs Analysis (≥{min_length} days)', fontsize=16, fontweight='bold')
-    plt.xlabel('Date')
-    plt.ylabel('Price ($)')
-    plt.grid(True, alpha=0.3)
+    fig.update_layout(
+        title=f'Market Price Runs (Minimum Length: {min_length} days)',
+        xaxis_title='Date',
+        yaxis_title='Close Price',
+        hovermode='closest',
+        template='plotly_white',
+        height=500
+    )
     
-    # Simple legend
-    if len(significant_runs[significant_runs['direction'] == 'Up']) > 0:
-        plt.plot([], [], 'green', linewidth=4, label='Up Runs')
-    if len(significant_runs[significant_runs['direction'] == 'Down']) > 0:
-        plt.plot([], [], 'red', linewidth=4, label='Down Runs')
-    plt.legend()
+    return fig
+
+
     
-    plt.tight_layout()
-    plt.show()
+# --- plot maxprofit using matplotlib ---
 
 def plot_max_profit_segments(prices: Union[pd.Series, list]):
     """
