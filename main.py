@@ -39,6 +39,7 @@ from app.modules.data_handler import api_data_handler
 
 data = get_hist_data('AAPL', '12mo')
 clean_data = api_data_handler(data)
+print(data)
 print(clean_data)
 
 
