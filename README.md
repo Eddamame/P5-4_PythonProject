@@ -3,7 +3,7 @@ This project will analyze stock market price data to identify trends and compute
 
 ## Usage
 
-main.py calls load_data.py which loads a CSV file with the chosen dataset 
+Basic App that fetches Raw Data from yFinance and displays stock analysis 
 ```python
 
 ```
@@ -14,6 +14,6 @@ main.py calls load_data.py which loads a CSV file with the chosen dataset
 Pull requests are welcome. For major changes, please open an issue first
 to discuss what you would like to change.
 
-Please make sure to update tests as appropriate.
+
 
 ## License
