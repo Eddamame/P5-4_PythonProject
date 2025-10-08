@@ -37,34 +37,36 @@ def calculate_sma(stock_name, window_sizes):
     return filtered_df
 
 # --- Daily Returns --- 
-def calculate_daily_returns(data: pd.DataFrame, stock_name: Optional[str] = None) -> Optional[pd.DataFrame]:
+def calculate_daily_returns(data: pd.DataFrame, stock_name: str,
+                             start_date: Optional[str] = None,
+                             end_date: Optional[str] = None) -> pd.DataFrame:
 
     # Formula: Daily Return = (Today's Close - Yesterday's Close) / Yesterday's Close    Args:
     # data (pd.DataFrame): DataFrame containing stock data with a 'Close' column
     try:
-        required_cols = ['name', 'date', 'close']
-        if not all(col in data.columns for col in required_cols):
-            raise ValueError(f"DataFrame must contain columns: {required_cols}")
-        
-        if stock_name:
-            if stock_name not in data['name'].unique():
-                raise ValueError(f"Stock '{stock_name}' not found in data")
-            stock_data = data[data['name'] == stock_name].copy()
-        else:
-            stock_data = data.copy()
+        stock_data = data[data['name'] == stock_name].copy()
+
+        if start_date:
+            stock_data = stock_data[stock_data['date'] >= pd.to_datetime(start_date)]
+        if end_date:
+            stock_data = stock_data[stock_data['date'] <= pd.to_datetime(end_date)]
         
         stock_data = stock_data.sort_values('date')
         
+        # Calculate daily returns using percentage change
         stock_data['Daily_Return'] = stock_data['close'].pct_change().round(4)
         
-        return stock_data
-        
+        return stock_data[['date', 'close', 'Daily_Return']]
+    
     except Exception as e:
         print(f"Error calculating daily returns: {e}")
-        return None
+        return pd.DataFrame()
+
 
 # --- Profit Calculator --- 
-def calculate_max_profit(prices: Union[List[float], pd.Series]) -> float:
+def calculate_max_profit(data: pd.DataFrame, stock_name: str,
+                         start_date: Optional[str] = None,
+                         end_date: Optional[str] = None) -> float:
     """
     Calculates maximum profit achievable through multiple buy/sell transactions
     using the Valley-Peak approach (Greedy Algorithm).
@@ -75,27 +77,27 @@ def calculate_max_profit(prices: Union[List[float], pd.Series]) -> float:
     Returns:
         Maximum achievable profit
     """
-    # Input validation and conversion
-    if not prices:
-        raise ValueError("Price list cannot be empty")
-    
-    if isinstance(prices, pd.Series):
-        prices = prices.tolist()
-    
-    if len(prices) < 2:
-        return 0.0  
+    try:
+        stock_data = data[data['name'] == stock_name].copy()
 
-    if any(price < 0 for price in prices):
-        raise ValueError("Prices cannot be negative")
+        if start_date:
+            stock_data = stock_data[stock_data['date'] >= pd.to_datetime(start_date)]
+        if end_date:
+            stock_data = stock_data[stock_data['date'] <= pd.to_datetime(end_date)]
+        
+        prices = stock_data['close'].tolist()
+
+        if len(prices) < 2:
+            return 0.0
+        
+        # Valley–Peak algorithm: sum all positive differences
+        max_profit = sum(max(0, prices[i] - prices[i-1]) for i in range(1, len(prices)))
+        
+        return round(max_profit, 2)
     
-    max_profit = 0.0
-    
-    # Implement Valley-Peak algorithm
-    for i in range(1, len(prices)):
-        if prices[i] > prices[i-1]:
-            max_profit += prices[i] - prices[i-1]
-    
-    return round(max_profit, 2)
+    except Exception as e:
+        print(f"Error calculating max profit: {e}")
+        return 0.0
  
 # --- Upward and Downward Run Analysis ---
 
