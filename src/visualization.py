@@ -1,5 +1,6 @@
 # Use this for your visualization functions 
 import pandas as pd
+import numpy as np
 from typing import Union
 import matplotlib.pyplot as plt
 import plotly.express as px 
@@ -131,3 +132,136 @@ def plot_max_profit_segments(data, stock_name, start_date=None, end_date=None):
                       xaxis_title="Date", yaxis_title="Price ($)",
                       template="plotly_white")
     fig.show()
+
+def plot_prediction_vs_actual_line(test_dates, actual_prices, predicted_prices):
+    """
+    Creates a simple line graph comparing actual and predicted prices over time.
+
+    Parameters:
+        test_dates (pd.Series): The dates corresponding to the test set.
+        actual_prices (np.array): The actual price values from the test set.
+        predicted_prices (np.array): The values predicted by the model.
+    """
+    # Convert everything to pandas Series/DataFrame for easier sorting
+    df = pd.DataFrame({
+        'date': test_dates,
+        'actual': actual_prices,
+        'predicted': predicted_prices
+    })
+    
+    # Sort by date to ensure chronological order
+    df = df.sort_values(by='date')
+    
+    # Create a new figure
+    fig = go.Figure()
+
+    # Add the RED line for ACTUAL prices with markers
+    fig.add_trace(go.Scatter(
+        x=df['date'],
+        y=df['actual'],
+        mode='lines+markers',
+        name='Actual Price',
+        line=dict(color='red', width=2),
+        marker=dict(size=8)
+    ))
+
+    # Add the BLUE line for PREDICTED prices with markers
+    fig.add_trace(go.Scatter(
+        x=df['date'],
+        y=df['predicted'],
+        mode='lines+markers',
+        name='Predicted Price',
+        line=dict(color='blue', width=2),
+        marker=dict(size=8)
+    ))
+
+    # Simple, clean layout
+    fig.update_layout(
+        title='Actual vs. Predicted Prices',
+        xaxis_title='Date',
+        yaxis_title='Price',
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        ),
+        template="plotly_white",
+        width=900,
+        height=500
+    )
+
+    fig.show()
+
+def display_prediction_comparison_table(test_dates, actual_prices, predicted_prices):
+    """
+    Creates and displays a table comparing actual vs. predicted prices with their difference.
+    
+    Parameters:
+        test_dates (pd.Series): The dates corresponding to the test set.
+        actual_prices (np.array): The actual price values from the test set.
+        predicted_prices (np.array): The values predicted by the model.
+        
+    Returns:
+        pd.DataFrame: DataFrame containing the comparison data.
+    """
+    # Create and sort the DataFrame
+    df = pd.DataFrame({
+        'Date': test_dates,
+        'Actual': actual_prices,
+        'Predicted': predicted_prices
+    })
+    df = df.sort_values(by='Date')
+    
+    # Calculate differences
+    df['Difference'] = df['Actual'] - df['Predicted']
+    df['Difference %'] = (df['Difference'] / df['Actual'] * 100).round(2)
+    
+    # Format the numeric columns to 2 decimal places
+    df['Actual'] = df['Actual'].round(2)
+    df['Predicted'] = df['Predicted'].round(2)
+    df['Difference'] = df['Difference'].round(2)
+    
+    # Create a table visualization
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['Date', 'Actual Price', 'Predicted Price', 'Difference', 'Difference (%)'],
+            fill_color='paleturquoise',
+            align='left',
+            font=dict(size=12, color='black')
+        ),
+        cells=dict(
+            values=[
+                df['Date'].dt.strftime('%Y-%m-%d'),
+                df['Actual'],
+                df['Predicted'],
+                df['Difference'],
+                df['Difference %'].apply(lambda x: f"{x:+.2f}%")
+            ],
+            fill_color=[
+                'white',
+                'white',
+                'white',
+                [
+                    'lightgreen' if val >= 0 else 'lightpink' 
+                    for val in df['Difference']
+                ],
+                [
+                    'lightgreen' if val >= 0 else 'lightpink' 
+                    for val in df['Difference %']
+                ]
+            ],
+            align='right',
+            font=dict(size=11)
+        )
+    )])
+    
+    fig.update_layout(
+        title='Actual vs. Predicted Prices Comparison',
+        width=800
+    )
+    
+    fig.show()
+    
+    # Return the DataFrame in case you want to use it for further analysis
+    return df

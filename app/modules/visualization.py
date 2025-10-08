@@ -1,5 +1,6 @@
 # Use this for your visualization functions 
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 from typing import Union
 import matplotlib.pyplot as plt
@@ -145,4 +146,55 @@ def plot_max_profit_segments(data, stock_name, start_date=None, end_date=None):
     fig.update_layout(title=f"Max Profit Segments — Total Profit: {total_profit}",
                       xaxis_title="Date", yaxis_title="Price ($)",
                       template="plotly_white")
+    fig.show()
+
+
+#  Prediction Visualization
+
+# Plot actual vs. predicted values for the test set
+
+def plot_actual_vs_predicted(actual_values, predicted_values, stock_name=""):
+    """
+    Creates an interactive scatter plot of actual vs. predicted values using Plotly.
+    
+    Parameters:
+        actual_values (np.array): The true target values from the test set.
+        predicted_values (np.array): The values predicted by the model for the test set.
+        stock_name (str): The name of the stock for the chart title.
+    """
+    fig = go.Figure()
+
+    # Add a scatter plot for the actual vs. predicted values.
+    # Each point represents one prediction from the test set.
+    fig.add_trace(go.Scatter(
+        x=actual_values,
+        y=predicted_values,
+        mode='markers',
+        name='Actual vs. Predicted',
+        marker=dict(color='blue', opacity=0.7)
+    ))
+
+    # Add a 45-degree line representing a perfect prediction (where actual equals predicted).
+    # A good model's points will be close to this line.
+    min_val = min(np.min(actual_values), np.min(predicted_values))
+    max_val = max(np.max(actual_values), np.max(predicted_values))
+    
+    fig.add_trace(go.Scatter(
+        x=[min_val, max_val],
+        y=[min_val, max_val],
+        mode='lines',
+        name='Perfect Prediction Line',
+        line=dict(color='red', dash='dash')
+    ))
+
+    # Update the layout with a title and axis labels for clarity.
+    fig.update_layout(
+        title=f'Model Performance for {stock_name}: Actual vs. Predicted Values (Test Set)',
+        xaxis_title='Actual Values',
+        yaxis_title='Predicted Values',
+        showlegend=True,
+        width=800,
+        height=600
+    )
+
     fig.show()
