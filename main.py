@@ -1,8 +1,7 @@
 # File: main.py
 # import pandas as pd
-# from src.data_handler import data_handler
-# from src.visualization import plot_price_and_sma, plot_max_profit_segments
-# from src.prediction import validate_and_plot, predict_next_day, plot_actual_prices
+# from app.modules.visualization import plot_price_and_sma, plot_max_profit_segments
+# from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
 from app.modules.data_fetcher import get_hist_data
 from app.modules.data_handler import api_data_handler
 # def main():
