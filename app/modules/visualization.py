@@ -4,7 +4,9 @@ import plotly.graph_objects as go
 from typing import Union
 import matplotlib.pyplot as plt
 import plotly.express as px 
-from .metrics import calculate_sma, calculate_max_profit  
+import plotly.graph_objects as go
+from typing import Optional
+from .metrics import calculate_sma, calculate_daily_returns, calculate_max_profit 
 
 
 # --- plot SMA using plotly ---
@@ -91,59 +93,56 @@ def plot_runs(runs_df, prices, min_length=4):
     
 # --- plot maxprofit using matplotlib ---
 
-def plot_max_profit_segments(prices: Union[pd.Series, list]):
+def plot_daily_returns_plotly(data: pd.DataFrame, stock_name: str,
+                               start_date: Optional[str] = None,
+                               end_date: Optional[str] = None):
+    """
+    Create an interactive bar chart of daily returns using Plotly.
+
+    Args:
+        data (pd.DataFrame): Full dataset.
+        stock_name (str): Stock to visualize.
+        start_date (str, optional): Start date filter.
+        end_date (str, optional): End date filter.
+    """
+    # Get filtered data with daily returns
+    filtered = calculate_daily_returns(data, stock_name, start_date, end_date)
+
+    # Create bar chart with color coding (green for positive, red for negative)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=filtered['date'],
+        y=filtered['Daily_Return'] * 100,  # Convert to percentage
+        marker_color=['green' if val >= 0 else 'red' for val in filtered['Daily_Return']],
+        name='Daily Return (%)'
+    ))
+
+    # Add chart title and labels
+    fig.update_layout(title=f"Daily Returns for {stock_name}",
+                      xaxis_title="Date", yaxis_title="Return (%)",
+                      template="plotly_white")
+    fig.show()
+
+def plot_max_profit_segments(data, stock_name, start_date=None, end_date=None):
     """
     Plot the stock price series and highlight all buy–sell segments
     that contribute to the maximum profit (Valley–Peak strategy),
     while calling calculate_max_profit to display the total.
     """
-    # Ensure a pandas Series for easy indexing
-    if isinstance(prices, list):
-        prices = pd.Series(prices, index=range(len(prices)))
+    
+    stock_data = data[data['name'] == stock_name].copy()
 
-    if len(prices) < 2:
-        raise ValueError("Need at least 2 price points to compute profit")
+    if start_date:
+        stock_data = stock_data[stock_data['date'] >= pd.to_datetime(start_date)]
+    if end_date:
+        stock_data = stock_data[stock_data['date'] <= pd.to_datetime(end_date)]
 
-    # ----- total profit from your existing function -----
-    total_profit = calculate_max_profit(prices)
+    prices = stock_data['close'].reset_index(drop=True)
+    total_profit = calculate_max_profit(data, stock_name, start_date, end_date)
 
-    # ----- identify buy/sell segments (valley–peak) -----
-    segments = []
-    i = 0
-    while i < len(prices) - 1:
-        while i < len(prices) - 1 and prices.iloc[i + 1] <= prices.iloc[i]:
-            i += 1
-        valley = i
-        while i < len(prices) - 1 and prices.iloc[i + 1] >= prices.iloc[i]:
-            i += 1
-        peak = i
-        if peak > valley:
-            segments.append((valley, peak))
-
-    # ----- plotting -----
-    plt.figure(figsize=(12, 6))
-    plt.plot(prices.index, prices.values, color='black', linewidth=1, alpha=0.7, label="Price")
-
-    for start, end in segments:
-        plt.plot(prices.index[start:end + 1],
-                 prices.iloc[start:end + 1],
-                 color='green', linewidth=3, alpha=0.8)
-
-        plt.scatter(prices.index[start], prices.iloc[start], color='blue', marker='^', s=80, label='Buy' if start == segments[0][0] else "")
-        plt.scatter(prices.index[end],   prices.iloc[end],   color='red',  marker='v', s=80, label='Sell' if start == segments[0][0] else "")
-
-        mid = start + (end - start)//2
-        profit_segment = prices.iloc[end] - prices.iloc[start]
-        plt.annotate(f"+{profit_segment:.2f}",
-                     xy=(prices.index[mid], prices.iloc[mid]),
-                     xytext=(0, 15), textcoords='offset points',
-                     ha='center', fontsize=9, fontweight='bold',
-                     bbox=dict(boxstyle='round,pad=0.2', facecolor='green', alpha=0.6))
-
-    plt.title(f"Max Profit Segments — Total Profit: {total_profit:.2f}")
-    plt.xlabel("Date")
-    plt.ylabel("Price ($)")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=stock_data['date'], y=prices, mode='lines', name='Price'))
+    fig.update_layout(title=f"Max Profit Segments — Total Profit: {total_profit}",
+                      xaxis_title="Date", yaxis_title="Price ($)",
+                      template="plotly_white")
+    fig.show()

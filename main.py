@@ -1,5 +1,11 @@
 # File: main.py
 # import pandas as pd
+# from src.data_handler import data_handler
+# from src.visualization import plot_price_and_sma, plot_max_profit_segments
+# from src.prediction import validate_and_plot, predict_next_day, plot_actual_prices
+#Run main to test both graphs
+from src.visualization import plot_daily_returns_plotly, plot_max_profit_segments
+
 from app.modules.metrics import calculate_runs, get_significant_runs
 from app.modules.visualization import plot_price_and_sma, plot_max_profit_segments, plot_runs
 # from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
@@ -33,6 +39,15 @@ from app.modules.data_handler import api_data_handler
 
 data = get_hist_data('AAPL', '12mo')
 clean_data = api_data_handler(data)
+print(clean_data)
+
+
+# Test visualizations for daily returns and max profit
+data.columns = [col.lower() for col in data.columns]  # ['date', 'open', 'high', 'low', 'close', 'volume']
+data['name'] = 'AAPL'
+
+plot_daily_returns_plotly(data, stock_name='AAPL')
+plot_max_profit_segments(data, stock_name='AAPL')
 runs_df, direction, prices = calculate_runs(clean_data)
 # result = get_significant_runs(runs_df, 5)
 # print(result['significant_runs'] )

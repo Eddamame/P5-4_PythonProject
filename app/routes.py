@@ -1,7 +1,7 @@
 # Handles all user interaction / requests
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from app.module.data_fetcher import fetch_historical_data
+from app.modules.data_fetcher import fetch_historical_data
 
 # Assuming you are using a Blueprint for organization
 main = Blueprint('main', __name__) 
