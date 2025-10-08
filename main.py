@@ -16,8 +16,8 @@ def main():
     window_size = input("Enter SMA window size (e.g., 50): ").split(',')
     window_size = [int(x.strip()) for x in window_size]
     # Plot the price and SMA
-    plot_price_and_sma(stock_name, window_size)
-    plot_max_profit_segments(df['close'])
+    #plot_price_and_sma(stock_name, window_size)
+    #plot_max_profit_segments(df['close'])
 
     # Plot actual stock prices
     plot_actual_prices(df, target_column='close')
