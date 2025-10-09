@@ -152,55 +152,86 @@ def validate_model(data, target_column, test_size=0.2):
     # Return values needed for plotting
     return date_test, target_test, predictions_on_test_data
 
-
-def forecast_prices(data, target_column, n_days=1):
+def forecast_prices(data, target_column):
     """
-    Predict future prices for the next 'n' days using an iterative approach.
-    This method uses its own predictions to create features for subsequent predictions.
+        Predict future prices for the next 'n' days using an iterative approach.
+        This method uses its own predictions to create features for subsequent predictions.
 
-    Parameters:
-        data (pd.DataFrame): The historical data to train the model on.
-        target_column (str): The name of the column we want to predict.
-        n_days (int): The number of future days to predict.
+        Parameters:
+            data (pd.DataFrame): The historical data to train the model on.
+            target_column (str): The name of the column we want to predict.
+            n_days (int): The number of future days to predict.
 
-    Returns:
-        predictions (list): A list of predicted values for the next 'n' days.
-    """
-    print(f"--- Predicting Next {n_days} Day(s) ---")
-    
-    # Step 1: Train the model on the ENTIRE historical dataset to get the best coefficients.
-    features = data.drop(columns=['date', target_column]).values
-    target = data[target_column].values
-    coefficients = calculate_coefficients(features, target)
+        Returns:
+            predictions (list): A list of predicted values for the next 'n' days.
+        """
+    while True:
+        try:
+            # Get user input for the number of days
+            n_days_input = input("Enter number of days to forecast (or 'q' to quit): ").strip()
 
-    # Step 2: Get the last row of real features to start the prediction loop.
-    last_known_features = features[-1].reshape(1, -1)
+            # Allow user to quit
+            if n_days_input.lower() in ['q', 'quit']:
+                print("Forecast canceled.")
+                return []
 
-    # We need to make an assumption for future volume. A simple one is to use the average historical volume.
-    average_volume = data['volume'].mean()
+            # Convert input to an integer
+            n_days = int(n_days_input)
 
-    # Step 3: Iteratively predict for n_days.
-    future_predictions = []
-    current_features = last_known_features
+            # Validate the input range
+            if n_days < 1:
+                print("Error: Number of days must be at least 1.")
+                continue  # Ask for input again
 
-    for day in range(n_days):
-        # Predict the next day's value
-        next_prediction = predict(current_features, coefficients)[0]
-        future_predictions.append(next_prediction)
-        print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
+            if n_days > 30:
+                print("Warning: Forecasting more than 30 days ahead is highly unreliable with this model.")
+                confirm = input("Do you want to continue anyway? (y/n): ").strip().lower()
+                if confirm != 'y':
+                    continue # Ask for input again
+            
+            # If input is valid, break the loop and proceed to forecasting
+            break
 
-        # Create temporary features for the *next* prediction in the loop.
-        # Assumption: The next day's Open, High, and Low will be the previous day's predicted Close price.
-        # This is a major simplification and the main reason why this forecasting method is not accurate for many days ahead.
-        next_features = np.array([[
-            next_prediction,    # Open
-            next_prediction,    # High
-            next_prediction,    # Low
-            average_volume      # Volume
-        ]])
+        except ValueError:
+            print("Invalid input. Please enter a whole number.")
+        except KeyboardInterrupt:
+            print("\nForecast canceled.")
+            return []
+
+    # --- Forecasting Logic ---
+    try:
+        print(f"\n--- Predicting Next {n_days} Day(s) ---")
         
-        # Update the features for the next iteration of the loop.
-        current_features = next_features
+        # Step 1: Train the model on the ENTIRE historical dataset
+        features = data.drop(columns=['date', target_column]).values
+        target = data[target_column].values
+        coefficients = calculate_coefficients(features, target)
 
-    print("----------------------------------\n")
-    return future_predictions
+        # Step 2: Get the last row of real features to start the prediction loop
+        last_known_features = features[-1].reshape(1, -1)
+        average_volume = data['volume'].mean()
+
+        # Step 3: Iteratively predict for n_days
+        future_predictions = []
+        current_features = last_known_features
+
+        for day in range(n_days):
+            next_prediction = predict(current_features, coefficients)[0]
+            future_predictions.append(next_prediction)
+            print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
+
+            # Create synthetic features for the next iteration
+            next_features = np.array([[
+                next_prediction,    # Open
+                next_prediction,    # High
+                next_prediction,    # Low
+                average_volume      # Volume
+            ]])
+            current_features = next_features
+
+        print("----------------------------------\n")
+        return future_predictions
+
+    except Exception as e:
+        print(f"An unexpected error occurred during forecasting: {e}")
+        return []
