@@ -1,9 +1,7 @@
 import numpy as np
-import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 """
-Author: Ignatius
 The goal of this module is to implement a multiple linear regression model
 to predict stock prices based on the features in the dataset.
 
@@ -114,23 +112,19 @@ def validate_model(data, target_column, test_size=0.2):
         target_column (str): The name of the target column in the dataframe
         test_size (float): Proportion of the dataset to include in the test split (default is 0.2)
     Returns:
-        date_test (pd.Series): test set dates for plotting
-        target_test (np.array): Actual target values from test set
-        predictions_on_test_data (np.array): Predicted target values for test set
     """
     print("--- Starting Model Validation ---")
     
     # Step 1: Prepare features and target from the dataframe
     # Features are the inputs (e.g., Open, High, Low, Volume)
     # Target is the output we want to predict (e.g., Close)
-    dates = data['date']
-    features = data.drop(columns=['date', target_column]).values
+    features = data.drop(columns=['date', 'name', target_column]).values
     target = data[target_column].values
 
-    # Step 2: Split the data into training and testing sets. Date is also splitted for plotting later
+    # Step 2: Split the data into training and testing sets.
     # random_state=123 to ensure data is split the same way every time
-    features_train, features_test, target_train, target_test, date_train, date_test = train_test_split(
-        features, target, dates, test_size=test_size, random_state=123
+    features_train, features_test, target_train, target_test = train_test_split(
+        features, target, test_size=test_size, random_state=123
     )
     print(f"Data split into {len(features_train)} training samples and {len(features_test)} testing samples.")
 
@@ -149,8 +143,8 @@ def validate_model(data, target_column, test_size=0.2):
     print(f"R-Squared (R²): {r2:.3f}")
     print("------------------------------\n")
 
-    # Return values needed for plotting
-    return date_test, target_test, predictions_on_test_data
+    # Return the actual and predicted values for plotting if needed
+    return target_test, predictions_on_test_data
 
 
 def forecast_prices(data, target_column, n_days=1):
@@ -169,7 +163,7 @@ def forecast_prices(data, target_column, n_days=1):
     print(f"--- Predicting Next {n_days} Day(s) ---")
     
     # Step 1: Train the model on the ENTIRE historical dataset to get the best coefficients.
-    features = data.drop(columns=['date', target_column]).values
+    features = data.drop(columns=['date', 'name', target_column]).values
     target = data[target_column].values
     coefficients = calculate_coefficients(features, target)
 
@@ -189,8 +183,8 @@ def forecast_prices(data, target_column, n_days=1):
         future_predictions.append(next_prediction)
         print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
 
-        # Create temporary features for the *next* prediction in the loop.
-        # Assumption: The next day's Open, High, and Low will be the previous day's predicted Close price.
+        # Create synthetic features for the *next* prediction in the loop.
+        # Assumption: The next day's Open, High, and Low will be the predicted Close price.
         # This is a major simplification and the main reason why this forecasting method is not accurate for many days ahead.
         next_features = np.array([[
             next_prediction,    # Open

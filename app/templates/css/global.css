@@ -1,9 +1,37 @@
+:root {
+    /* Colors */
+    --primary-color: #059669; /* Emerald 600 - Main Green */
+    --primary-dark: #047857;  /* Emerald 700 - Darker Green */
+    --accent-color: #ff8c69;  /* Accent Maroon/Pink */
+    --bg-light: #f9fafb;      /* Gray 50 - Light Background */
+    --bg-body: #ffffff;       /* White body background */
+    --text-primary: #1f2937;  /* Gray 800 */
+    --text-secondary: #6b7280;/* Gray 500 */
+    --border-color: #e5e7eb;  /* Gray 200 */
+    
+    /* Spacing & Radius */
+    --card-radius: 0.75rem;
+    --input-padding: 0.75rem 1rem;
+    --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Global Body & Main Page Structure --- */
 body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif; /* Standard font */
+    color: var(--text-primary);
+    line-height: 1.5;
+    background-color: var(--bg-body);
+    
     margin: 10px auto;
     min-width: 320px;
     max-width: 1440px;    
-    }
+}
 
 header,
 #main,
@@ -16,61 +44,38 @@ footer {
     padding:10px;
 }
 
-#menu {
-    justify-content: center;
-    list-style-type: none;
-    display: flex;
-    flex-direction: column;        
-}
+/* --- Navigation & Logo --- */
 
 #logo {
     width: 200px;
 }
 
+#menu {
+    justify-content: center;
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;   
+    padding: 0; /* Ensures no padding conflicts with flex centering */     
+}
+
 #menu li a {
     display:block;
     text-decoration: none;
-    color:black; 
+    color: black; 
     padding: 10px 10px;
     margin: 0px 5px;
     line-height: 1;
-    border-top:1px solid #a01548;     
+    border-top: 1px solid var(--accent-color); /* Navigation border color */
 }
 
 #menu li a:hover, #menu li a:active  {
-    color:white;
-    background-color:#a01548;
+    color: white;
+    background-color: var(--accent-color);
     transition: all 0.25s;
 }
 
+/* --- Hamburger Menu Logic (Mobile First) --- */
 
-
-
-
-.button {
-    color:white;
-    padding:8px 15px;
-    margin: 15px;
-    background-color: #a01548;        
-    border:none;
-    border-radius: 15px;    
-}
-
-.disabled {
-    background-color: #e0dbdd;
-}
-
-.rightalign {
-    text-align: right;
-}
-
-.leftalign {
-    text-align: left;
-}
-
-
-
-/* Start of Hamburger */
 nav label { 
     display: inline-block;
     width:95%;
@@ -83,12 +88,11 @@ nav label {
     display:none;
 }
 
+/* Hide menu by default on mobile */
 #menu { display: none; }
 nav input:checked ~ #menu { display: flex; }
 
-/* End Hamburger */
-
-@media screen and (min-width:480px) { /* Navbar is default column, changes to row when >= 480px */
+@media screen and (min-width:480px) { /* Navbar changes to row when >= 480px */
     #menu {
         display:flex;
         flex-direction: row;
@@ -98,6 +102,82 @@ nav input:checked ~ #menu { display: flex; }
         border-top:none;
     }
 
-    /* Hide hamburger */
+    /* Hide hamburger components on desktop */
     nav label, #hamburger { display: none; }
+}
+
+.body-container {
+    /* We use margin-top to separate the card from the nav bar */
+    margin-top: 20px;
+    min-height: 60vh; /* Reduced height as we now have a header */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem; 
+}
+
+.card {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 900px; 
+    background-color: #ffffff;
+    padding: 2.5rem;
+    border-radius: var(--card-radius);
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+    text-align: center; /* Centers block elements like buttons and main text */
+}
+
+.title {
+    font-size: 1.875rem; 
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+/* --- Global Button Styling (Merged with Primary .button) --- */
+/* Uses .btn-primary class in HTML */
+.btn-primary {
+    width: 100%;
+    /* Merged padding/margin from .button */
+    padding: 8px 15px; 
+    margin: 15px 0; /* Added vertical margin for spacing */
+    background-color: var(--accent-color); /* Used button color */
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 15px; /* Standard button border radius */
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    text-align: center; 
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.disabled, .disabled:hover, .disabled:active {
+    background-color: #e0dbdd; /* Disabled button color */
+    cursor: default;
+    transform: none;
+}
+
+/* --- Alignment Classes --- */
+.rightalign {
+    text-align: right;
+}
+
+.leftalign {
+    text-align: left;
 }

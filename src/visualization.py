@@ -1,9 +1,13 @@
 # Use this for your visualization functions 
 import pandas as pd
+import numpy as np
 from typing import Union
 import matplotlib.pyplot as plt
 import plotly.express as px 
-from .metrics import calculate_sma, calculate_max_profit  
+import plotly.graph_objects as go
+from typing import Optional
+from src.metrics import calculate_sma, calculate_daily_returns, calculate_max_profit
+# from metrics import calculate_sma, calculate_daily_returns, calculate_max_profit  
 
 
 def plot_price_and_sma(stock_name, window_size):
@@ -75,59 +79,189 @@ def plot_runs(prices, runs_df, min_length=5):
     plt.tight_layout()
     plt.show()
 
-def plot_max_profit_segments(prices: Union[pd.Series, list]):
+def plot_daily_returns_plotly(data: pd.DataFrame, stock_name: str,
+                               start_date: Optional[str] = None,
+                               end_date: Optional[str] = None):
+    """
+    Create an interactive bar chart of daily returns using Plotly.
+
+    Args:
+        data (pd.DataFrame): Full dataset.
+        stock_name (str): Stock to visualize.
+        start_date (str, optional): Start date filter.
+        end_date (str, optional): End date filter.
+    """
+    # Get filtered data with daily returns
+    filtered = calculate_daily_returns(data, stock_name, start_date, end_date)
+
+    # Create bar chart with color coding (green for positive, red for negative)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=filtered['date'],
+        y=filtered['Daily_Return'] * 100,  # Convert to percentage
+        marker_color=['green' if val >= 0 else 'red' for val in filtered['Daily_Return']],
+        name='Daily Return (%)'
+    ))
+
+    # Add chart title and labels
+    fig.update_layout(title=f"Daily Returns for {stock_name}",
+                      xaxis_title="Date", yaxis_title="Return (%)",
+                      template="plotly_white")
+    fig.show()
+
+def plot_max_profit_segments(data, stock_name, start_date=None, end_date=None):
     """
     Plot the stock price series and highlight all buy–sell segments
     that contribute to the maximum profit (Valley–Peak strategy),
     while calling calculate_max_profit to display the total.
     """
-    # Ensure a pandas Series for easy indexing
-    if isinstance(prices, list):
-        prices = pd.Series(prices, index=range(len(prices)))
+    
+    stock_data = data[data['name'] == stock_name].copy()
 
-    if len(prices) < 2:
-        raise ValueError("Need at least 2 price points to compute profit")
+    if start_date:
+        stock_data = stock_data[stock_data['date'] >= pd.to_datetime(start_date)]
+    if end_date:
+        stock_data = stock_data[stock_data['date'] <= pd.to_datetime(end_date)]
 
-    # ----- total profit from your existing function -----
-    total_profit = calculate_max_profit(prices)
+    prices = stock_data['close'].reset_index(drop=True)
+    total_profit = calculate_max_profit(data, stock_name, start_date, end_date)
 
-    # ----- identify buy/sell segments (valley–peak) -----
-    segments = []
-    i = 0
-    while i < len(prices) - 1:
-        while i < len(prices) - 1 and prices.iloc[i + 1] <= prices.iloc[i]:
-            i += 1
-        valley = i
-        while i < len(prices) - 1 and prices.iloc[i + 1] >= prices.iloc[i]:
-            i += 1
-        peak = i
-        if peak > valley:
-            segments.append((valley, peak))
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=stock_data['date'], y=prices, mode='lines', name='Price'))
+    fig.update_layout(title=f"Max Profit Segments — Total Profit: {total_profit}",
+                      xaxis_title="Date", yaxis_title="Price ($)",
+                      template="plotly_white")
+    fig.show()
 
-    # ----- plotting -----
-    plt.figure(figsize=(12, 6))
-    plt.plot(prices.index, prices.values, color='black', linewidth=1, alpha=0.7, label="Price")
+def plot_prediction_vs_actual_line(test_dates, actual_prices, predicted_prices):
+    """
+    Creates a simple line graph comparing actual and predicted prices over time.
 
-    for start, end in segments:
-        plt.plot(prices.index[start:end + 1],
-                 prices.iloc[start:end + 1],
-                 color='green', linewidth=3, alpha=0.8)
+    Parameters:
+        test_dates (pd.Series): The dates corresponding to the test set.
+        actual_prices (np.array): The actual price values from the test set.
+        predicted_prices (np.array): The values predicted by the model.
+    """
+    # Convert everything to pandas Series/DataFrame for easier sorting
+    df = pd.DataFrame({
+        'date': test_dates,
+        'actual': actual_prices,
+        'predicted': predicted_prices
+    })
+    
+    # Sort by date to ensure chronological order
+    df = df.sort_values(by='date')
+    
+    # Create a new figure
+    fig = go.Figure()
 
-        plt.scatter(prices.index[start], prices.iloc[start], color='blue', marker='^', s=80, label='Buy' if start == segments[0][0] else "")
-        plt.scatter(prices.index[end],   prices.iloc[end],   color='red',  marker='v', s=80, label='Sell' if start == segments[0][0] else "")
+    # Add the RED line for ACTUAL prices with markers
+    fig.add_trace(go.Scatter(
+        x=df['date'],
+        y=df['actual'],
+        mode='lines+markers',
+        name='Actual Price',
+        line=dict(color='red', width=2),
+        marker=dict(size=8)
+    ))
 
-        mid = start + (end - start)//2
-        profit_segment = prices.iloc[end] - prices.iloc[start]
-        plt.annotate(f"+{profit_segment:.2f}",
-                     xy=(prices.index[mid], prices.iloc[mid]),
-                     xytext=(0, 15), textcoords='offset points',
-                     ha='center', fontsize=9, fontweight='bold',
-                     bbox=dict(boxstyle='round,pad=0.2', facecolor='green', alpha=0.6))
+    # Add the BLUE line for PREDICTED prices with markers
+    fig.add_trace(go.Scatter(
+        x=df['date'],
+        y=df['predicted'],
+        mode='lines+markers',
+        name='Predicted Price',
+        line=dict(color='blue', width=2),
+        marker=dict(size=8)
+    ))
 
-    plt.title(f"Max Profit Segments — Total Profit: {total_profit:.2f}")
-    plt.xlabel("Date")
-    plt.ylabel("Price ($)")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+    # Simple, clean layout
+    fig.update_layout(
+        title='Actual vs. Predicted Prices',
+        xaxis_title='Date',
+        yaxis_title='Price',
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        ),
+        template="plotly_white",
+        width=900,
+        height=500
+    )
+
+    fig.show()
+
+def display_prediction_comparison_table(test_dates, actual_prices, predicted_prices):
+    """
+    Creates and displays a table comparing actual vs. predicted prices with their difference.
+    
+    Parameters:
+        test_dates (pd.Series): The dates corresponding to the test set.
+        actual_prices (np.array): The actual price values from the test set.
+        predicted_prices (np.array): The values predicted by the model.
+        
+    Returns:
+        pd.DataFrame: DataFrame containing the comparison data.
+    """
+    # Create and sort the DataFrame
+    df = pd.DataFrame({
+        'Date': test_dates,
+        'Actual': actual_prices,
+        'Predicted': predicted_prices
+    })
+    df = df.sort_values(by='Date')
+    
+    # Calculate differences
+    df['Difference'] = df['Actual'] - df['Predicted']
+    df['Difference %'] = (df['Difference'] / df['Actual'] * 100).round(2)
+    
+    # Format the numeric columns to 2 decimal places
+    df['Actual'] = df['Actual'].round(2)
+    df['Predicted'] = df['Predicted'].round(2)
+    df['Difference'] = df['Difference'].round(2)
+    
+    # Create a table visualization
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['Date', 'Actual Price', 'Predicted Price', 'Difference', 'Difference (%)'],
+            fill_color='paleturquoise',
+            align='left',
+            font=dict(size=12, color='black')
+        ),
+        cells=dict(
+            values=[
+                df['Date'].dt.strftime('%Y-%m-%d'),
+                df['Actual'],
+                df['Predicted'],
+                df['Difference'],
+                df['Difference %'].apply(lambda x: f"{x:+.2f}%")
+            ],
+            fill_color=[
+                'white',
+                'white',
+                'white',
+                [
+                    'lightgreen' if val >= 0 else 'lightpink' 
+                    for val in df['Difference']
+                ],
+                [
+                    'lightgreen' if val >= 0 else 'lightpink' 
+                    for val in df['Difference %']
+                ]
+            ],
+            align='right',
+            font=dict(size=11)
+        )
+    )])
+    
+    fig.update_layout(
+        title='Actual vs. Predicted Prices Comparison',
+        width=800
+    )
+    
+    fig.show()
+    
+    # Return the DataFrame in case you want to use it for further analysis
+    return df
