@@ -9,9 +9,10 @@
 #from app.modules.metrics import calculate_runs, get_significant_runs
 #from app.modules.visualization import plot_price_and_sma, plot_max_profit_segments, plot_runs
 # from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
-from app.modules.data_fetcher import get_hist_data
-#from app.modules.data_handler import api_data_handler
-
+from src.data_fetcher import get_hist_data
+from src.data_handler import api_data_handler
+from src.prediction import validate_model, forecast_prices
+from src.visualization import plot_prediction_vs_actual_line, display_prediction_comparison_table
 # def main():
 #     filepath = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
 #     # FilterName and filterTime is optional
@@ -39,7 +40,7 @@ from app.modules.data_fetcher import get_hist_data
 #     main()
 
 data = get_hist_data('AAPL', '12mo')
-#df = api_data_handler(data)
+df = api_data_handler(data)
 # print(data)
 # print(clean_data)
 
@@ -60,14 +61,14 @@ data = get_hist_data('AAPL', '12mo')
 
 # --- Model Validation ---
 # Call validate_model and capture the returned actual and predicted values
-# test_dates, actual_prices, predicted_prices = validate_model(df, target_column='close')
+test_dates, actual_prices, predicted_prices = validate_model(df, target_column='close')
 
-# # --- Visualization ---
-# # Call the new plotting function with the captured data
-# plot_prediction_vs_actual_line(test_dates, actual_prices, predicted_prices)
+# --- Visualization ---
+# Call the new plotting function with the captured data
+plot_prediction_vs_actual_line(test_dates, actual_prices, predicted_prices)
 
-# # Display the comparison table
-# display_prediction_comparison_table(test_dates, actual_prices, predicted_prices)
+# Display the comparison table
+display_prediction_comparison_table(test_dates, actual_prices, predicted_prices)
 
-# # --- Future Forecasting ---
-# forecast_prices(data=df, target_column='close')
+# --- Future Forecasting ---
+forecast_prices(data=df, target_column='close', n_days=7)
