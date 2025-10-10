@@ -1,7 +1,3 @@
-# data_handler manages Data acquisition, Data Loading, Data Cleaning and pre-processing, Data Persistence (store in a CSV)
-import pandas as pd
-
-# this handles csv files 
 import pandas as pd
 import os
 from typing import List, Tuple, Optional
