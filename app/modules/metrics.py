@@ -14,7 +14,9 @@ from typing import List, Union
 
 """
 ----- SMA Analysis ------------------
+Author: Si Yun
 1. SMA Analysis
+Input:
 Objective: Smooth out short-term price fluctuations to identify the underlying trend direction over a specified period.
 parameter:
     df: pd.DataFrame: cleaned data from data_handler
@@ -29,7 +31,7 @@ step 2. Prepare the data
     Retrieve the 'close' prices and convert them into a list for easier calculation.
 step 3. Perform SMA calculation
     For each window size, compute the average closing price using the sliding window approach.
-    The first n-1 entries will be None since there’s not enough data to calculate SMA.
+    The first n-1 entries will be None since there's not enough data to calculate SMA.
 step 4. Store results
     Save the computed SMA values into a new column (e.g., sma_20, sma_50) in the DataFrame.
 step 5. Return output
@@ -95,8 +97,11 @@ Steps:
 # --- SMA Analysis ---
 def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
     try:
-        if not {'date', 'close'}.issubset(df.columns):
-            raise KeyError("DataFrame must contain 'date' and 'close' columns.")
+        
+        if 'date' not in df.columns:
+            raise ValueError("'date' column not found in dataframe")
+        if 'close' not in df.columns:
+            raise ValueError("'close' column not found in dataframe")
         if not all(isinstance(n, int) and n > 0 for n in window_sizes):
             raise ValueError("window_sizes must be a positive integers.")
 
