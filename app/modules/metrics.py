@@ -15,6 +15,7 @@ from typing import List, Union
 """
 ----- SMA Analysis ------------------
 1. SMA Analysis
+Objective: Smooth out short-term price fluctuations to identify the underlying trend direction over a specified period.
 parameter:
     df: pd.DataFrame: cleaned data from data_handler
     window_size: list of window size defined by user (datatype: int)    
@@ -70,6 +71,25 @@ Steps:
     4. Iterate through prices and sum all positive differences.
     5. Return the total profit rounded to 2 decimals.
 
+    ----- Price Trend Runs ------------------
+Objective:
+    Identify consecutive sequences (runs) of price movement (up or down) in a time series dataset.
+Features:
+    - Input: Pandas DataFrame with at least the columns ['date', 'close'].
+    - Calculates the day-to-day directional change (up: 1, down: -1, no change: 0) in the 'close' price.
+    - Groups consecutive days with the same non-zero directional change into 'runs'.
+Target:
+    - Output 1 (runs): DataFrame summarizing each run with columns ['start_date', 'end_date', 'length', 'start_index', 'end_index', 'direction'].
+    - Output 2 (direction): Pandas Series representing the directional change for each observation (1, -1, or 0).
+    - Output 3 (df): The processed DataFrame used internally, including the original index, 'date', and 'close'.
+Steps:
+    1. Validate required columns ('date', 'close') and convert 'date' to datetime format.
+    2. Reset the DataFrame index to create an accessible 'index' column for run tracking.
+    3. Calculate the day-to-day directional change using pandas diff() and numpy sign().
+    4. Identify consecutive sequences of the same direction using cumulative summation on shifts in direction.
+    5. Group the data by run ID, excluding days with no change (0), to aggregate run characteristics (start/end date/index, length, and direction).
+    6. Map the directional sign (1, -1) to descriptive strings ('Up', 'Down').
+    7. Return the runs summary, the directional series, and the processed base DataFrame.
 """
 
 # --- SMA Analysis ---
