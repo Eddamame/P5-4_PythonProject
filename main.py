@@ -1,9 +1,11 @@
 # File: main.py
 # import pandas as pd
 #Run main to test both graphs
-from app.modules.metrics import calculate_runs, get_significant_runs
-from app.modules.visualization import plot_runs
-#from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
+from app.modules.visualization import plot_daily_returns_plotly, plot_max_profit_segments
+
+from app.modules.metrics import calculate_runs, get_significant_runs, calculate_daily_returns, calculate_max_profit
+from app.modules.visualization import plot_price_and_sma, plot_max_profit_segments, plot_runs
+# from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
 from app.modules.data_fetcher import get_hist_data
 from app.modules.data_handler import api_data_handler
 
@@ -33,27 +35,15 @@ from app.modules.data_handler import api_data_handler
 # if __name__ == "__main__":
 #     main()
 
-data = get_hist_data('GM', '12mo')
-df = api_data_handler(data)
-runs_df, direction, prices = calculate_runs(df)
-my_plot = plot_runs(runs_df, prices, 3)
-if my_plot is not None:
-    my_plot.show()
-
-
-# Test visualizations for daily returns and max profit
-# data.columns = [col.lower() for col in data.columns]  # ['date', 'open', 'high', 'low', 'close', 'volume']
-# data['name'] = 'AAPL'
-
-# plot_daily_returns_plotly(data, stock_name='AAPL')
-# plot_max_profit_segments(data, stock_name='AAPL')
-# runs_df, direction, prices = calculate_runs(clean_data)
-# result = get_significant_runs(runs_df, 5)
-# print(result['significant_runs'] )
-
-# my_plot = plot_runs(runs_df, prices, 6)
+# data = get_hist_data('GM', '12mo')
+# df = api_data_handler(data)
+# runs_df, direction, prices = calculate_runs(df)
+# my_plot = plot_runs(runs_df, prices, 3)
 # if my_plot is not None:
-#     my_plot.show()
+    # my_plot.show()
+
+# print(data)
+# print(clean_data)
 
 # --- Model Validation ---
 # Call validate_model and capture the returned actual and predicted values
