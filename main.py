@@ -41,12 +41,12 @@ from app.modules.data_handler import api_data_handler
 # if __name__ == "__main__":
 #     main()
 
-# data = get_hist_data('GM', '12mo')
-# df = api_data_handler(data)
-# runs_df, direction, prices = calculate_runs(df)
-# my_plot = plot_runs(runs_df, prices, 3)
-# if my_plot is not None:
-    # my_plot.show()
+data = get_hist_data('GM', '12mo')
+df = api_data_handler(data)
+runs_df, direction, prices = calculate_runs(df)
+my_plot = plot_runs(runs_df, prices, 3)
+if my_plot is not None:
+    my_plot.show()
 
 # print(data)
 # print(clean_data)
