@@ -10,9 +10,6 @@ import pandas as pd
 # This object records all your routes.
 main_bp = Blueprint('main', __name__)
 
-# NOTE: We no longer import Flask or create an 'app' instance here.
-# The main_bp object replaces the 'app' for routing decorators.
-
 from app.modules.data_fetcher import get_hist_data
 from app.modules.data_handler import api_data_handler
 from app.modules.prediction import forecast_prices
