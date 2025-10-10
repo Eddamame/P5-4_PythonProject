@@ -9,8 +9,6 @@ import pandas as pd
 import numpy as np
 from .data_handler import data_handler
 import pandas as pd
-from typing import Optional
-from typing import List, Union
 
 """
 ----- SMA Analysis ------------------
