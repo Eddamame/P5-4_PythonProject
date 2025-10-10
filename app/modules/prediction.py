@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 """
-Author: Ignatius
 The goal of this module is to implement a multiple linear regression model
 to predict stock prices based on the features in the dataset.
 
@@ -72,7 +71,7 @@ def add_intercept(features):
 
 def calculate_coefficients(features, target):
     """
-    Fit regression coefficients using the Normal Equation method.
+    Calculate regression coefficients using the Normal Equation method.
     Formula: coefficients = ((x_transpose)*X)^-1 * (x_transpose)*y
     Parameters:
         features (np.array): The input features for training
@@ -196,7 +195,7 @@ def forecast_prices(data, target_column):
             print("Invalid input. Please enter a whole number.")
         except KeyboardInterrupt:
             print("\nForecast canceled.")
-            return []
+            return [], []
 
     # --- Forecasting Logic ---
     try:
@@ -210,6 +209,10 @@ def forecast_prices(data, target_column):
         # Step 2: Get the last row of real features to start the prediction loop
         last_known_features = features[-1].reshape(1, -1)
         average_volume = data['volume'].mean()
+        last_date = data['date'].iloc[-1]
+
+        # Generate future dates
+        future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=n_days).to_pydatetime().tolist()
 
         # Step 3: Iteratively predict for n_days
         future_predictions = []
@@ -230,8 +233,39 @@ def forecast_prices(data, target_column):
             current_features = next_features
 
         print("----------------------------------\n")
-        return future_predictions
+        return future_dates, future_predictions
 
     except Exception as e:
         print(f"An unexpected error occurred during forecasting: {e}")
-        return []
+        return [], []
+    
+"""
+add_intercept(features)
+    - Calculates intercept column for features matrix
+    - Uses features (independent variables)
+
+calculate_coefficients(features, target)
+    - Calculates regression coefficients using Normal Equation method
+    - Uses features (independent variables) and target (dependent variable)
+
+predict(features, coefficients)
+    - Makes predictions using features and coefficients
+    - Uses features (independent variables) and coefficients (model parameters)
+    - Interdependent functions
+        - add_intercept(features)
+        - calculate_coefficients(features, target)
+
+validate_model(data, target_column, test_size=0.2)
+    - Splits data into train/test, then uses previous functions to calculate predicted values
+    - Interdependent functions
+        - add_intercept(features)
+        - calculate_coefficients(features, target)
+        - predict(features, coefficients)
+
+forecast_prices(data, target_column)
+    - Predicts future prices for 'n' days
+    - Interdependent functions
+        - add_intercept(features)
+        - calculate_coefficients(features, target)
+        - predict(features, coefficients)s
+"""

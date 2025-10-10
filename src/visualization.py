@@ -265,3 +265,43 @@ def display_prediction_comparison_table(test_dates, actual_prices, predicted_pri
     
     # Return the DataFrame in case you want to use it for further analysis
     return df
+
+def predicted_plot(historical_data, forecast_dates, forecast_values):
+    """
+    Plots the historical closing prices and overlays the future forecasted prices.
+
+    Parameters:
+        historical_data (pd.DataFrame): The full dataframe with 'date' and 'close' columns.
+        forecast_dates (pd.DatetimeIndex): The future dates for the forecast.
+        forecast_values (list): The predicted values for the future dates.
+    """
+    fig = go.Figure()
+
+    # Add the historical data line
+    fig.add_trace(go.Scatter(
+        x=historical_data['date'],
+        y=historical_data['close'],
+        mode='lines',
+        name='Historical Price',
+        line=dict(color='blue')
+    ))
+
+    # Add the forecast line
+    fig.add_trace(go.Scatter(
+        x=forecast_dates,
+        y=forecast_values,
+        mode='lines+markers',
+        name='Forecasted Price',
+        line=dict(color='red', dash='dash')
+    ))
+
+    fig.update_layout(
+        title='Historical Prices with Future Forecast',
+        xaxis_title='Date',
+        yaxis_title='Close Price',
+        showlegend=True,
+        width=1000,
+        height=600
+    )
+
+    fig.show()
