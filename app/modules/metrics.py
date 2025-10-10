@@ -13,6 +13,28 @@ from typing import Optional
 from typing import List, Union
 
 """
+----- SMA Analysis ------------------
+1. SMA Analysis
+parameter:
+    df: pd.DataFrame: cleaned data from data_handler
+    window_size: list of window size defined by user (datatype: int)    
+return:
+    dataframe of the calculated SMA 
+step 1. Validate inputs
+    Check that 'date' and 'close' columns exist in the DataFrame.
+    Verify that each window size is a positive integer.
+step 2. Prepare the data
+    Set 'date' as the index.
+    Retrieve the 'close' prices and convert them into a list for easier calculation.
+step 3. Perform SMA calculation
+    For each window size, compute the average closing price using the sliding window approach.
+    The first n-1 entries will be None since there’s not enough data to calculate SMA.
+step 4. Store results
+    Save the computed SMA values into a new column (e.g., sma_20, sma_50) in the DataFrame.
+step 5. Return output
+    Return the updated DataFrame containing all SMA columns.
+step 6.Error handling
+    Use the except block to catch and print input or unexpected errors without crashing the program.
 
 ----- Daily Returns ------------------
 Author: Xue E
@@ -51,26 +73,37 @@ Steps:
 """
 
 # --- SMA Analysis ---
-df =data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true')
-# Create a new column year
-df['year'] = pd.DatetimeIndex(df['date']).year
-# filter out the Name 
-stock_name = pd.unique(df['name'])
-def calculate_sma(stock_name, window_sizes):
-    filtered_df = df[(df['name'] == stock_name) & (df['year'] > 2015)].copy()
-    filtered_df = filtered_df.set_index('date')
-    closed_price = filtered_df['close']
-    for n in window_sizes:
-        sma = []
-        for i in range(len(closed_price)):
-                if i < n - 1:
-                    sma.append(None)  # Always create the column
-                else:
-                    window = closed_price[i - n + 1 : i + 1]
-                    sma.append(round(sum(window)/n, 2))
-        filtered_df[f'sma_{n}'] = sma  # Column always exists
+def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
+    try:
+        if not {'date', 'close'}.issubset(df.columns):
+            raise KeyError("DataFrame must contain 'date' and 'close' columns.")
+        if not all(isinstance(n, int) and n > 0 for n in window_sizes):
+            raise ValueError("window_sizes must be a positive integers.")
 
-    return filtered_df
+        df = df.set_index('date')
+        close_prices = df['close'].tolist()
+    
+        for n in window_sizes:
+            if len(close_prices) < n:
+                df[f'sma_{n}'] = [None] * len(close_prices)
+                continue
+
+            sma = [None] * (n - 1)
+            window_sum = sum(close_prices[:n])
+            sma.append(round(window_sum / n, 2))
+
+            for i in range(n, len(close_prices)):
+                window_sum += close_prices[i] - close_prices[i - n]
+                sma.append(round(window_sum / n, 2))
+
+            df[f'sma_{n}'] = sma
+
+        return df
+
+    except (KeyError, ValueError) as e:
+        print(f"Input Error: {e}")
+    except Exception as e:
+        print(f"Unexpected Error: {e}")
 
 # --- Daily Returns --- 
 def calculate_daily_returns(data):
