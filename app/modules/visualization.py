@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from typing import Union
-import matplotlib.pyplot as plt
 import plotly.express as px 
 import plotly.graph_objects as go
 from typing import Optional
@@ -90,24 +89,24 @@ def plot_runs(runs_df, prices, min_length=4):
     
     return fig
 
+def plot_daily_returns_plotly(data, stock_name = str):
 
+    """
+    Creates an interactive bar chart showing daily returns for a given stock.
+    Parameters:
+        data (pd.DataFrame): DataFrame containing stock data from api_data_handler.
+        stock_name (str): The name of the stock to visualize.
+        start_date (str, optional): Start date filter in 'YYYY-MM-DD' format.
+        end_date (str, optional): End date filter in 'YYYY-MM-DD' format.
+    """
+    # Check if required columns exist
+    if 'date' not in data.columns:
+        raise ValueError("'date' column not found in dataframe")
+    if 'close' not in data.columns:
+        raise ValueError("'close' column not found in dataframe")
     
-# --- plot maxprofit using matplotlib ---
-
-def plot_daily_returns_plotly(data: pd.DataFrame, stock_name: str,
-                               start_date: Optional[str] = None,
-                               end_date: Optional[str] = None):
-    """
-    Create an interactive bar chart of daily returns using Plotly.
-
-    Args:
-        data (pd.DataFrame): Full dataset.
-        stock_name (str): Stock to visualize.
-        start_date (str, optional): Start date filter.
-        end_date (str, optional): End date filter.
-    """
     # Get filtered data with daily returns
-    filtered = calculate_daily_returns(data, stock_name, start_date, end_date)
+    filtered = calculate_daily_returns(data)
 
     # Create bar chart with color coding (green for positive, red for negative)
     fig = go.Figure()
@@ -124,25 +123,28 @@ def plot_daily_returns_plotly(data: pd.DataFrame, stock_name: str,
                       template="plotly_white")
     fig.show()
 
-def plot_max_profit_segments(data, stock_name, start_date=None, end_date=None):
+def plot_max_profit_segments(data):
     """
+    Creates an interactive line chart showing stock price trend and annotates total maximum profit.
+    Parameters:
+        data (pd.DataFrame): DataFrame containing stock data from api_data_handler.
+        stock_name (str): The name of the stock to visualize.
+        start_date (str, optional): Start date filter in 'YYYY-MM-DD' format.
+        end_date (str, optional): End date filter in 'YYYY-MM-DD' format.
+
     Plot the stock price series and highlight all buy–sell segments
     that contribute to the maximum profit (Valley–Peak strategy),
     while calling calculate_max_profit to display the total.
     """
     
-    stock_data = data[data['name'] == stock_name].copy()
-
-    if start_date:
-        stock_data = stock_data[stock_data['date'] >= pd.to_datetime(start_date)]
-    if end_date:
-        stock_data = stock_data[stock_data['date'] <= pd.to_datetime(end_date)]
-
-    prices = stock_data['close'].reset_index(drop=True)
-    total_profit = calculate_max_profit(data, stock_name, start_date, end_date)
+    if 'close' not in data.columns:
+        raise ValueError("'close' column not found in dataframe")
+    
+    prices = data['close'].reset_index(drop=True)
+    total_profit = calculate_max_profit(data)
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=stock_data['date'], y=prices, mode='lines', name='Price'))
+    fig.add_trace(go.Scatter(x=data['date'], y=prices, mode='lines', name='Price'))
     fig.update_layout(title=f"Max Profit Segments — Total Profit: {total_profit}",
                       xaxis_title="Date", yaxis_title="Price ($)",
                       template="plotly_white")
