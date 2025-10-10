@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 import requests 
+import json # New: Required for JSONDecodeError
 from datetime import datetime
 from dateutil.relativedelta import relativedelta 
 
@@ -12,15 +13,20 @@ from dateutil.relativedelta import relativedelta
     # Stop retrying after 5 attempts.
     stop=stop_after_attempt(5),
     
-    # FIX: Include the general 'Exception' class to retry on yfinance internal errors 
-    # like YFTzMissingError, which are not network errors.
-    retry=retry_if_exception_type((requests.exceptions.HTTPError, requests.exceptions.ConnectionError, Exception))
+    # CRITICAL FIX: Retry on network errors, JSON decoding errors, or any general exception 
+    # thrown internally by yfinance (like the YFTzMissingError).
+    retry=retry_if_exception_type((
+        requests.exceptions.HTTPError, 
+        requests.exceptions.ConnectionError,
+        json.JSONDecodeError, # Handles "Expecting value: line 1 column 1"
+        Exception             # Handles all other unexpected yfinance failures
+    ))
 )
 def get_hist_data(ticker: str, period: str):
     """
     Fetches historical market data for a given ticker and period.
     
-    The period string (e.g., '12mo') is converted into explicit start and end 
+    The period string ('12mo', '24mo', etc.) is converted into explicit start and end 
     dates using python-dateutil for reliable data retrieval via yfinance.
     """
     
@@ -42,8 +48,7 @@ def get_hist_data(ticker: str, period: str):
     
     try:
         # --- 2. Data Fetching ---
-        # Use start/end dates for robustness and set ignore_tz=True to bypass 
-        # yfinance's strict timezone check that causes YFTzMissingError.
+        # Use start/end dates for robustness and set ignore_tz=True to bypass timezone errors
         stock_df = yf.download(
             ticker, 
             start=start_date, 
@@ -55,7 +60,6 @@ def get_hist_data(ticker: str, period: str):
 
         if stock_df.empty:
             # If yfinance returns an empty DataFrame, raise a ValueError.
-            # This will NOT be retried by tenacity.
             raise ValueError(f"No data returned by API for Ticker: {ticker} and Period: {period}.")
 
         # --- 3. Clean and Format Data ---
@@ -71,7 +75,6 @@ def get_hist_data(ticker: str, period: str):
         return stock_df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
         
     except Exception as e:
-        # This catches internal errors (retried by tenacity) or the ValueError above 
-        # (which is not retried if it's not the last attempt).
-        # We re-raise the error to let the Flask route handle the final failure.
+        # This catches network errors (retried by tenacity) or the ValueError above.
+        # It also catches any retryable errors that tenancy failed to handle automatically.
         raise ValueError(f"No historical data could be found for Ticker: {ticker}. Error: {e}")
