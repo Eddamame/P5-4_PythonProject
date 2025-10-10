@@ -17,32 +17,39 @@ from typing import List, Union
 
 # --- SMA Analysis ---
 def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
-    #set date as Index
-    filtered_df = df.set_index('date')
-    # retrieve the closing price of the stock
-    closed_price = filtered_df['close']
-    # loop through the window_sizes
-    for n in window_sizes:
-        #initialise an empty list to store SMA and set window_size to 0
-        sma = []
-        window_sum=0
-        #Calculate SMA for each data point
-        for i in range(len(closed_price)):
-            # add new element into the window_sum
-            window_sum += closed_price[i]  
-            # remove the element if the window exceed n
-            if i >= n:
-                window_sum -= closed_price[i - n]  
-            # if the data is insufficient for a specific window it will append None back to the SMA list
-            if i < n - 1:
-                sma.append(None)
-            # else it will compute the SMA for the given window and would be append back to the SMA list in 2 d.p.    
-            else:
+    try:
+        if not {'date', 'close'}.issubset(df.columns):
+            raise KeyError("DataFrame must contain 'date' and 'close' columns.")
+        if df.empty:
+            raise ValueError("Input DataFrame is empty.")
+        if not all(isinstance(n, int) and n > 0 for n in window_sizes):
+            raise ValueError("window_sizes must be a positive integers.")
+
+        df = df.set_index('date')
+        close_prices = df['close'].tolist()
+        n_data = len(close_prices)
+
+        for n in window_sizes:
+            if n_data < n:
+                df[f'sma_{n}'] = [None] * n_data
+                continue
+
+            sma = [None] * (n - 1)
+            window_sum = sum(close_prices[:n])
+            sma.append(round(window_sum / n, 2))
+
+            for i in range(n, n_data):
+                window_sum += close_prices[i] - close_prices[i - n]
                 sma.append(round(window_sum / n, 2))
-        #add SMA column to the dataframe            
-        filtered_df[f'sma_{n}'] = sma  # Column always exists
-    #return the filtered_df with one or more SMA
-    return filtered_df
+
+            df[f'sma_{n}'] = sma
+
+        return df
+
+    except (KeyError, ValueError) as e:
+        print(f"Input Error: {e}")
+    except Exception as e:
+        print(f"Unexpected Error: {e}")
 
 # --- Daily Returns --- 
 def calculate_daily_returns(data: pd.DataFrame, stock_name: str,

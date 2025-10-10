@@ -5,45 +5,106 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>visualisation</title>
+    <title>Results Dashboard</title>
     <link rel="stylesheet" href="css/results.css">
     <link rel="stylesheet" href="css/css_reset.css">
     <link rel="stylesheet" href="css/global.css">
-
 </head>
 
 <body>
     <header>
-        <img id="logo" src="images/logo.png" alt=”Logo”>
+        <img id="logo" src="images/logo.png" alt="Logo">
         <nav>
             <label for="hamburger">&#9776;</label>
             <input type="checkbox" id="hamburger" />
             <ul id="menu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="metrics.html">Metrics</a></li>
-                <li><a href="results.html">Result</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/metrics">Metrics</a></li>
+                <li><a href="/results">Result</a></li>
             </ul>
         </nav>
         <hr>
     </header>
 
     <main class="dashboard-grid">
+        <h1 class="dashboard-title">
+            Results for {{ results.ticker }} ({{ results.period }})
+        </h1>
+
+        <!-- Predictive Model -->
+        {% if 'predictive_model' in selected_methods %}
         <div class="chart-card large-chart">
             <h2 class="chart-title">Predictive Model</h2>
-            <h3 class="subheader">Tommorow's Forecasted Stock Close is { prediction }</h3>
-            {{ plot1 }} 
+            {% if results.metrics.next_day_prediction %}
+                <h3 class="subheader">
+                    Tomorrow's Forecasted Close: 
+                </h3>
+            {% endif %}
+            {% if results.plots.prediction %}
+                {{ results.plots.prediction|safe }}
+            {% else %}
+                <p class="error">Prediction plot unavailable.</p>
+            {% endif %}
         </div>
-        <div class="chart-card half-width"><h2 class="chart-title">SMA</h2>{{ plot2 }}</div>
-        <div class="chart-card half-width"><h2 class="chart-title">Daily Returns</h2>{{ plot3 }}</div>
-        <div class="chart-card full-width"><h2 class="chart-title">Max Profit</h2>{{ plot4 }}</div>
-        <div class="chart-card full-width"><h2 class="chart-title">Market Price Runs</h2>{{ plot5 }}</div>
+        {% endif %}
+
+        <!-- SMA -->
+        {% if 'sma' in selected_methods %}
+        <div class="chart-card half-width">
+            <h2 class="chart-title">Simple Moving Average ({{ results.metrics.sma_window }} days)</h2>
+            {% if results.plots.sma %}
+                {{ results.plots.sma|safe }}
+            {% else %}
+                <p class="error">SMA plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Daily Returns -->
+        {% if 'daily_returns' in selected_methods %}
+        <div class="chart-card half-width">
+            <h2 class="chart-title">Daily Returns</h2>
+            {% if results.plots.daily_returns %}
+                {{ results.plots.daily_returns|safe }}
+                <p>Average Daily Return: {{ results.metrics.avg_daily_return }}</p>
+                <p>Volatility: {{ results.metrics.return_volatility }}</p>
+            {% else %}
+                <p class="error">Daily Returns plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Max Profit -->
+        {% if 'max_profit' in selected_methods %}
+        <div class="chart-card full-width">
+            <h2 class="chart-title">Maximum Profit</h2>
+            {% if results.plots.max_profit %}
+                {{ results.plots.max_profit|safe }}
+            {% else %}
+                <p class="error">Max Profit plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Runs Analysis -->
+        {% if 'runs' in selected_methods %}
+        <div class="chart-card full-width">
+            <h2 class="chart-title">Market Price Runs</h2>
+            {% if results.plots.runs %}
+                {{ results.plots.runs|safe }}
+                <p>Total Runs: {{ results.metrics.total_runs }}</p>
+                <p>Average Run Length: {{ results.metrics.avg_run_length }}</p>
+                <p>Longest Run: {{ results.metrics.longest_run }}</p>
+            {% else %}
+                <p class="error">Runs plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
     </main>
-   
+
     <footer>
         <hr>
         &copy; Stock Analysis. All rights reserved.
     </footer>
-
 </body>
-
 </html>
