@@ -11,7 +11,7 @@ import plotly.io as pio
 main_bp = Blueprint('main', __name__)
 
 from app.modules.data_fetcher import get_hist_data
-from app.modules.data_handler import api_data_handler, handle_backup_csv # <-- CRITICAL: Importing both cleaning and backup functions
+from app.modules.data_handler import api_data_handler, handle_backup_csv 
 
 from app.modules.prediction import forecast_prices
 from app.modules.visualization import (
