@@ -50,9 +50,9 @@ def get_hist_data(ticker: str, period: str):
         print(f"DEBUG: Attempting fetch for {ticker} from {start_date} to {end_date}")
         
         # --- 2. Data Fetching ---
-        # Use start/end dates for robustness and set ignore_tz=True
+        # FINAL FIX: Pass the ticker as a list to prevent internal yfinance multi-ticker confusion
         stock_df = yf.download(
-            ticker, 
+            [ticker],  # <-- CRITICAL CHANGE: Pass ticker as a list
             start=start_date, 
             end=end_date, 
             interval="1d", 
@@ -60,18 +60,27 @@ def get_hist_data(ticker: str, period: str):
             ignore_tz=True 
         )
 
+        # Check if the returned object is a Series (single ticker) or DataFrame (multiple tickers)
+        # When passed as a list, yfinance always returns a DataFrame, even if only one ticker is requested.
+        # We need to check if the columns are a MultiIndex (which happens when fetching multiple data fields for a single ticker)
+        # and ensure we select the correct columns.
+
         if stock_df.empty:
             # If yfinance returns an empty DataFrame, raise a ValueError.
-            # This triggers the RetryError if it happens 5 times.
             raise ValueError(f"No data returned by API for Ticker: {ticker} and Period: {period}.")
 
         # --- 3. Clean and Format Data ---
         # Handle MultiIndex
         if isinstance(stock_df.columns, pd.MultiIndex):
-            stock_df.columns = stock_df.columns.get_level_values(0)
+            # If it's a MultiIndex (which happens when fetching multiple fields for one ticker),
+            # we flatten the columns and ensure the relevant data is extracted.
+            stock_df = stock_df.droplevel(1, axis=1)
 
         # reset the index to turn the 'Date' index into a column
         stock_df = stock_df.reset_index()
+        # Rename the index column to 'Date' if it isn't already (yf.download usually calls it 'Date')
+        if 'index' in stock_df.columns:
+             stock_df = stock_df.rename(columns={'index': 'Date'})
 
         # Success
         print(f"Successfully fetched data for {ticker}.")
