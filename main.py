@@ -13,6 +13,7 @@ from src.data_fetcher import get_hist_data
 from src.data_handler import api_data_handler
 from src.prediction import validate_model, forecast_prices
 from src.visualization import plot_prediction_vs_actual_line, display_prediction_comparison_table
+from src.validation import run_all_validations
 # def main():
 #     filepath = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
 #     # FilterName and filterTime is optional
@@ -72,3 +73,6 @@ display_prediction_comparison_table(test_dates, actual_prices, predicted_prices)
 
 # --- Future Forecasting ---
 forecast_prices(data=df, target_column='close', n_days=7)
+
+# Validate all Stock Market modules and functions work as expected
+run_all_validations()

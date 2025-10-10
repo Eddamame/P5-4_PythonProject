@@ -100,7 +100,7 @@ def validate_data_handler():
         # Test 1.1: Basic Loading
         df = data_handler(test_file)
         tests.append(("Data Handler Loads CSV", df is not None and len(df) > 0, f"Loaded {len(df) if df is not None else 0} rows"))
-
+        
         # Test 1.2: Columns Check
         if df is not None:
             expected_columns = {'name', 'date', 'open', 'high', 'low', 'close', 'volume'}
@@ -357,7 +357,7 @@ def validate_real_data_compatibility():
             'low': 107.35,
             'close': 109.33,
             'volume': 53204626,
-            'name': 'AAPL'  # Changed to lowercase
+            'name': 'AAPL'  
         }
         
         # Test 5.1: Required columns
@@ -454,19 +454,19 @@ def generate_final_summary(all_results):
     overall_percentage = (total_passed / total_tests * 100) if total_tests > 0 else 0
     
     if total_passed == total_tests:
-        print(f"🎉 ALL TESTS PASSED! {total_passed}/{total_tests} tests successful!")
+        print(f" ALL TESTS PASSED! {total_passed}/{total_tests} tests successful!")
         print("   Your program is ready for integration!")
     elif overall_percentage >= 80:
-        print(f"✓ MOSTLY SUCCESSFUL: {total_passed}/{total_tests} tests passed ({overall_percentage:.0f}%)")
+        print(f" MOSTLY SUCCESSFUL: {total_passed}/{total_tests} tests passed ({overall_percentage:.0f}%)")
         print("   Minor issues to address, but core functionality works.")
     elif overall_percentage >= 60:
-        print(f"⚠ PARTIAL SUCCESS: {total_passed}/{total_tests} tests passed ({overall_percentage:.0f}%)")
+        print(f" PARTIAL SUCCESS: {total_passed}/{total_tests} tests passed ({overall_percentage:.0f}%)")
         print("   Some components need debugging before full integration.")
     else:
-        print(f"✗ NEEDS WORK: {total_passed}/{total_tests} tests passed ({overall_percentage:.0f}%)")
+        print(f" NEEDS WORK: {total_passed}/{total_tests} tests passed ({overall_percentage:.0f}%)")
         print("   Significant issues to resolve before integration.")
     
-    print("\n📋 RECOMMENDED ACTIONS:")
+    print("\n RECOMMENDED ACTIONS:")
     print("1. Fix any failed validation tests in team member code")
     print("2. Ensure consistent column naming (lowercase 'name')")
     print("3. Verify all imports work in src/ directory structure") 
