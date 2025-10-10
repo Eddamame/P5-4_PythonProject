@@ -7,12 +7,48 @@ analyzing time-series data, particularly for financial metrics.
 
 import pandas as pd
 import numpy as np
-from .data_handler import data_handler
+from .data_handler import data_handler, api_data_handler
 import pandas as pd
 from typing import Optional
 from typing import List, Union
 
+"""
 
+----- Daily Returns ------------------
+Author: Xue E
+Objective:
+    Compute daily returns for a given stock using cleaned data from api_data_handler.
+Features:
+    - Input: Pandas DataFrame with columns ['date', 'open', 'high', 'low', 'close', 'volume', 'name'].
+    - Filters data by stock name and optional date range.
+    - Calculates percentage change in closing prices.
+Target:
+    - Output: DataFrame with columns ['date', 'close', 'Daily_Return'].
+Steps:
+    1. Filter data for the specified stock name.
+    2. Apply optional start_date and end_date filters.
+    3. Sort data by date to ensure chronological order.
+    4. Compute daily returns using pandas pct_change() and round to 4 decimals.
+    5. Return DataFrame with date, close, and Daily_Return columns.
+
+----- Max Profit ----------------------
+Author: Xue E
+Objective:
+    Calculate the maximum achievable profit using multiple buy-sell transactions (Valley–Peak strategy).
+Features:
+    - Input: Pandas DataFrame from api_data_handler with columns ['date', 'close', 'name'].
+    - Filters data by stock name and optional date range.
+    - Computes profit by summing all positive differences between consecutive closing prices.
+Target:
+    - Output: Float representing total maximum profit.
+Steps:
+    1. Filter data for the specified stock name.
+    2. Apply optional start_date and end_date filters.
+    3. Extract closing prices as a list.
+    4. Iterate through prices and sum all positive differences.
+    5. Return the total profit rounded to 2 decimals.
+
+"""
 
 # --- SMA Analysis ---
 df =data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true')
@@ -37,20 +73,27 @@ def calculate_sma(stock_name, window_sizes):
     return filtered_df
 
 # --- Daily Returns --- 
-def calculate_daily_returns(data: pd.DataFrame, stock_name: str,
-                             start_date: Optional[str] = None,
-                             end_date: Optional[str] = None) -> pd.DataFrame:
+def calculate_daily_returns(data):
 
-    # Formula: Daily Return = (Today's Close - Yesterday's Close) / Yesterday's Close    Args:
-    # data (pd.DataFrame): DataFrame containing stock data with a 'Close' column
     try:
-        stock_data = data[data['name'] == stock_name].copy()
-
-        if start_date:
-            stock_data = stock_data[stock_data['date'] >= pd.to_datetime(start_date)]
-        if end_date:
-            stock_data = stock_data[stock_data['date'] <= pd.to_datetime(end_date)]
+        # Check if required columns exist
+        if 'date' not in data.columns:
+            raise ValueError("'date' column not found in dataframe")
+        if 'close' not in data.columns:
+            raise ValueError("'close' column not found in dataframe")
         
+        # Select required columns and copy
+        stock_data = data[['date', 'close']].copy()
+
+         # Convert date to datetime if not already
+        if not pd.api.types.is_datetime64_any_dtype(stock_data['date']):
+            stock_data['date'] = pd.to_datetime(stock_data['date'])
+        
+        # Check if we have data
+        if len(stock_data) == 0:
+            raise ValueError("No data available")
+        
+        # Ensure data is sorted by date
         stock_data = stock_data.sort_values('date')
         
         # Calculate daily returns using percentage change
@@ -64,28 +107,17 @@ def calculate_daily_returns(data: pd.DataFrame, stock_name: str,
 
 
 # --- Profit Calculator --- 
-def calculate_max_profit(data: pd.DataFrame, stock_name: str,
-                         start_date: Optional[str] = None,
-                         end_date: Optional[str] = None) -> float:
+def calculate_max_profit(data):
     """
     Calculates maximum profit achievable through multiple buy/sell transactions
-    using the Valley-Peak approach (Greedy Algorithm).
-    
-    Args:
-        prices: List or Series of stock prices
-    
-    Returns:
-        Maximum achievable profit
+    using the Valley-Peak approach (Greedy Algorithm).  
     """
     try:
-        stock_data = data[data['name'] == stock_name].copy()
-
-        if start_date:
-            stock_data = stock_data[stock_data['date'] >= pd.to_datetime(start_date)]
-        if end_date:
-            stock_data = stock_data[stock_data['date'] <= pd.to_datetime(end_date)]
+        # Check if required columns exist
+        if 'close' not in data.columns:
+            raise ValueError("'close' column not found in dataframe")
         
-        prices = stock_data['close'].tolist()
+        prices = data['close'].tolist()
 
         if len(prices) < 2:
             return 0.0

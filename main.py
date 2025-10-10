@@ -1,9 +1,16 @@
 # File: main.py
 # import pandas as pd
 #Run main to test both graphs
+<<<<<<< Updated upstream
 from app.modules.metrics import calculate_runs, get_significant_runs
 from app.modules.visualization import plot_runs
 #from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
+from app.modules.visualization import plot_daily_returns_plotly, plot_max_profit_segments
+
+#from app.modules.metrics import calculate_runs, get_significant_runs
+#from app.modules.visualization import plot_price_and_sma, plot_max_profit_segments, plot_runs
+# from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
+>>>>>>> Stashed changes
 from app.modules.data_fetcher import get_hist_data
 from app.modules.data_handler import api_data_handler
 
@@ -33,20 +40,39 @@ from app.modules.data_handler import api_data_handler
 # if __name__ == "__main__":
 #     main()
 
+<<<<<<< Updated upstream
 data = get_hist_data('GM', '12mo')
 df = api_data_handler(data)
 runs_df, direction, prices = calculate_runs(df)
 my_plot = plot_runs(runs_df, prices, 3)
 if my_plot is not None:
     my_plot.show()
+=======
+data = get_hist_data('AAPL', '12mo')
+df = api_data_handler(data)
+data1 = get_hist_data('PLTR', '12mo')
+df1 = api_data_handler(data1)
+data2 = get_hist_data('GM', '12mo')
+df2 = api_data_handler(data2)
+# print(data)
+# print(clean_data)
+>>>>>>> Stashed changes
 
 
 # Test visualizations for daily returns and max profit
-# data.columns = [col.lower() for col in data.columns]  # ['date', 'open', 'high', 'low', 'close', 'volume']
-# data['name'] = 'AAPL'
+df.columns = [col.lower() for col in df.columns]  
+df['name'] = 'AAPL'
+df1.columns = [col.lower() for col in df1.columns]  
+df1['name'] = 'PLTR'
+df2.columns = [col.lower() for col in df2.columns]  
+df2['name'] = 'GM'
 
-# plot_daily_returns_plotly(data, stock_name='AAPL')
-# plot_max_profit_segments(data, stock_name='AAPL')
+plot_daily_returns_plotly(df1, stock_name='PLTR')
+# plot_max_profit_segments(df1, stock_name='PLTR')
+# plot_daily_returns_plotly(df2, stock_name='GM')
+# plot_max_profit_segments(df2, stock_name='GM')
+# plot_daily_returns_plotly(df, stock_name='AAPL')
+# plot_max_profit_segments(df, stock_name='AAPL')
 # runs_df, direction, prices = calculate_runs(clean_data)
 # result = get_significant_runs(runs_df, 5)
 # print(result['significant_runs'] )
