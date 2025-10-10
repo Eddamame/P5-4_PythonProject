@@ -9,75 +9,99 @@
     <link rel="stylesheet" href="css/css_reset.css">
     <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="css/metrics.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <header>
-        <img id="logo" src="images/logo.png" alt=”Logo”>
+        <img id="logo" src="images/logo.png" alt="Logo">
         <nav>
             <label for="hamburger">&#9776;</label>
             <input type="checkbox" id="hamburger" />
             <ul id="menu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="metrics.html">Metrics</a></li>
-                <li><a href="results.html">Result</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/metrics">Metrics</a></li>
+                <li><a href="/results">Result</a></li>
             </ul>
         </nav>
         <hr>
     </header>
 
     <div class="card">
-        
         <header class="text-center">
-            <p class="subtitle" id="current-selection">Select an analysis to run for...</p>
+            <p class="subtitle" id="current-selection">
+                Select one or more analyses to run for {{ ticker }} ({{ period }})
+            </p>
         </header>
 
-        <!-- Metric Selection Grid -->
-        <div id="metrics-grid" class="metrics-grid">
-            
-            <!-- Daily Returns -->
-            <a href="#" class="metric-card" data-metric="daily_returns">
-                <i class="fa-solid fa-chart-line metric-icon"></i>
-                <h3 class="metric-title">Daily Returns</h3>
-                <p class="metric-desc">Visualize day-to-day percentage changes in price.</p>
-            </a>
+        <!-- Error message placeholder -->
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
 
-            <!-- Simple Moving Average (SMA) -->
-            <a href="#" class="metric-card" data-metric="sma">
-                <i class="fa-solid fa-calculator metric-icon"></i>
-                <h3 class="metric-title">Moving Average (SMA)</h3>
-                <p class="metric-desc">Smooth out price data to identify trend direction.</p>
-            </a>
+        <!-- Form for metric selection -->
+        <form method="POST" action="/metrics">
+            <div id="metrics-grid" class="metrics-grid">
 
-            <!-- Market Price Runs -->
-            <a href="#" class="metric-card" data-metric="price_runs">
-                <i class="fa-solid fa-mountain-sun metric-icon"></i>
-                <h3 class="metric-title">Price Runs Analysis</h3>
-                <p class="metric-desc">Identify significant continuous up/down market movements.</p>
-            </a>
+                <!-- Predictive Model -->
+                <label class="metric-card">
+                    <input type="checkbox" name="predictive_model" value="1" class="metric-checkbox">
+                    <i class="fa-solid fa-robot metric-icon"></i>
+                    <h3 class="metric-title">Price Prediction</h3>
+                    <p class="metric-desc">Forecast short-term future price movements using a model.</p>
+                </label>
 
-            <!-- Max Profit -->
-            <a href="#" class="metric-card" data-metric="max_profit">
-                <i class="fa-solid fa-money-bill-trend-up metric-icon"></i>
-                <h3 class="metric-title">Maximum Profit</h3>
-                <p class="metric-desc">Calculate the largest single profit possible in the period.</p>
-            </a>
-            
-            <!-- Prediction -->
-            <a href="#" class="metric-card" data-metric="prediction">
-                <i class="fa-solid fa-robot metric-icon"></i>
-                <h3 class="metric-title">Price Prediction</h3>
-                <p class="metric-desc">Forecast short-term future price movements using a model.</p>
-            </a>
-        </div>
-        
+                <!-- Simple Moving Average (SMA) -->
+                <label class="metric-card">
+                    <input type="checkbox" name="sma" value="1" class="metric-checkbox">
+                    <i class="fa-solid fa-calculator metric-icon"></i>
+                    <h3 class="metric-title">Moving Average (SMA)</h3>
+                    <p class="metric-desc">Smooth out price data to identify trend direction.</p>
+                    <select name="sma_window" class="sma-select">
+                        <option value="">-- Select window size --</option>
+                        <option value="20">20 days</option>
+                        <option value="50">50 days</option>
+                        <option value="200">200 days</option>
+                    </select>
+                </label>
+
+                <!-- Daily Returns -->
+                <label class="metric-card">
+                    <input type="checkbox" name="daily_returns" value="1" class="metric-checkbox">
+                    <i class="fa-solid fa-chart-line metric-icon"></i>
+                    <h3 class="metric-title">Daily Returns</h3>
+                    <p class="metric-desc">Visualize day-to-day percentage changes in price.</p>
+                </label>
+
+                <!-- Market Price Runs -->
+                <label class="metric-card">
+                    <input type="checkbox" name="runs" value="1" class="metric-checkbox">
+                    <i class="fa-solid fa-mountain-sun metric-icon"></i>
+                    <h3 class="metric-title">Price Runs Analysis</h3>
+                    <p class="metric-desc">Identify significant continuous up/down market movements.</p>
+                </label>
+
+                <!-- Max Profit -->
+                <label class="metric-card">
+                    <input type="checkbox" name="max_profit" value="1" class="metric-checkbox">
+                    <i class="fa-solid fa-money-bill-trend-up metric-icon"></i>
+                    <h3 class="metric-title">Maximum Profit</h3>
+                    <p class="metric-desc">Calculate the largest single profit possible in the period.</p>
+                </label>
+
+            </div>
+
+            <!-- Submit button -->
+            <div class="form-actions text-center">
+                <button type="submit" class="btn-submit">Run Analysis</button>
+            </div>
+        </form>
     </div>
-   
+
     <footer>
         <hr>
         &copy; Stock Analysis. All rights reserved.
     </footer>
-
 </body>
 
 </html>

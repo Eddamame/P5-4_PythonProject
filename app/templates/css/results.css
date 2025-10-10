@@ -1,71 +1,84 @@
-/* --- Dashboard Grid Layout: Using FLEXBOX --- */
+/* Layout grid for dashboard */
 .dashboard-grid {
-    display: flex; /* Activate Flexbox */
-    flex-wrap: wrap; /* Allow items to wrap to the next line */
-    gap: 20px; /* Space between items */
-    padding: 20px;
-    max-width: 1400px;
-    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 24px;
+    margin: 30px auto;
+    max-width: 1200px;
+    padding: 0 20px;
 }
 
-/* --- Chart Card Styles (Containers) --- */
+/* Dashboard title */
+.dashboard-title {
+    grid-column: 1 / -1;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #222;
+}
+
+/* Chart card styling */
 .chart-card {
-    background-color: white;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    position: relative; 
-    /* The height will be controlled by content or an explicit style */
-    display: flex; /* Make the card itself a flex container for content alignment */
-    flex-direction: column;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
+.chart-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+}
+
+/* Chart title */
 .chart-title {
-    margin-top: 0;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+/* Subheader (e.g., prediction text) */
+.subheader {
+    font-size: 1rem;
+    font-weight: 500;
     margin-bottom: 15px;
     color: #007bff;
-    font-size: 1.2em;
 }
 
-/* --- Layout Specific Styles using Flex Basis --- */
+/* Error messages inside cards */
+.error {
+    color: #842029;
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
 
-/* 1. Predictive Model (Should take the full width) */
+/* Card sizing helpers */
 .large-chart {
-    flex-basis: 100%; /* Takes up 100% of the container width */
-    height: 550px; /* Explicit height for the main large chart */
+    grid-column: 1 / -1; /* full width */
 }
 
-/* 2. Equal Width Charts (SMA, Daily Returns, Max Profit, Market Price Runs) */
-/* Apply this to all four remaining chart divs (plot2, plot3, plot4, plot5) */
-.dashboard-grid > .chart-card:nth-child(n+2) {
-    /* flex-grow: 1 -> allows the item to grow */
-    /* flex-shrink: 0 -> prevents the item from shrinking unnecessarily */
-    /* flex-basis: calc(25% - 15px) -> sets the base width to 1/4 of the container minus space for gaps */
-    flex: 1 0 calc(25% - 15px); 
-    height: 400px; /* Standard height for these four smaller charts */
+.full-width {
+    grid-column: 1 / -1;
 }
 
-/* --- Plotly Specific Fixes --- */
-/* Target the div Plotly generates to ensure it fills the container's remaining space */
-.chart-card > div {
-    /* In a column-flex card, the Plotly div takes up the remaining vertical space */
-    flex-grow: 1; 
-    height: 100% !important; /* Override Plotly's default inline styles if necessary */
-    width: 100% !important;
+.half-width {
+    grid-column: span 1;
 }
 
-/* --- Responsiveness (Mobile View) --- */
-@media (max-width: 992px) {
-    /* On tablets/smaller screens, switch to two charts per row */
-    .dashboard-grid > .chart-card:nth-child(n+2) {
-        flex: 1 0 calc(50% - 10px); /* Sets width to 50% minus gap adjustment */
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
     }
-}
-
-@media (max-width: 576px) {
-    /* On mobile, stack all charts vertically */
-    .chart-card {
-        flex-basis: 100% !important; 
-        height: 350px !important; 
+    .half-width {
+        grid-column: 1 / -1;
     }
 }

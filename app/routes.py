@@ -1,40 +1,306 @@
-# Handles all user interaction / requests
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from datetime import datetime, timedelta
+import json
 
-from flask import Blueprint, render_template, request, flash, redirect, url_for
-from app.modules.data_fetcher import fetch_historical_data
+from app.modules.data_fetcher import get_hist_data
+from app.modules.data_handler import api_data_handler
+from app.modules.prediction import forecast_prices
+from app.modules.visualization import (
+    predicted_plot, 
+    plot_price_and_sma,
+    plot_daily_returns_plotly,
+    plot_max_profit, 
+    plot_runs)
+from app.modules.metrics import (
+    calculate_sma,
+    calculate_daily_returns,
+    calculate_max_profit,
+    calculate_runs
+)
 
-# Assuming you are using a Blueprint for organization
-main = Blueprint('main', __name__) 
+app = Flask(__name__)
+app.secret_key = 'P5-4'  # Change this to a secure random key
 
-@main.route('/analyze', methods=['POST'])
-def analyze_stock():
-    ticker = request.form.get('ticker')
-    period = request.form.get('period')
-    
-    # 1. (Placeholder) Call Validation Module
-    # validation.validate_input(ticker, period) 
-    
-    # 2. Call the data fetcher
-    data_response = fetch_historical_data(ticker, period)
-    
-    # 3. Handle the response
-    if isinstance(data_response, dict) and data_response.get('status') == 'error':
-        # Logged error detected! Display the user-friendly message from the fetcher.
-        flash(data_response['message'], 'danger') # 'danger' is a category for styling
-        
-        # Redirect back to the input form page (index.html)
-        return redirect(url_for('main.index')) 
-
-    # 4. Success Case: Process the DataFrame
-    stock_df = data_response
-    
-    # ... Continue to call data_handler, metrics, prediction modules
-    # processed_data = data_handler.process(stock_df)
-    
-    # ... Render the results page
-    return render_template('results.html', data=stock_df.to_html()) 
-
-# Assuming a simple route for your main form page
-@main.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    """
+    Index route: Collect and validate ticker + period
+    """
+    if request.method == 'GET':
+        # Render the input form
+        return render_template('index.html', error=None)
+    
+    if request.method == 'POST':
+        # Get form data
+        ticker = request.form.get('ticker', '').strip().upper()
+        period = request.form.get('period', '')
+        
+        # Basic validation
+        if not ticker or not period:
+            return render_template('index.html', 
+                                 error="Please fill in both ticker and period.")
+        
+        # Validate ticker by attempting to fetch data
+        try:
+            # Quick validation call
+            test_data = get_hist_data(ticker, period)
+            if test_data is None or len(test_data) == 0:
+                raise ValueError("No data returned")
+            
+            # If valid, store in session
+            session['ticker'] = ticker
+            session['period'] = period
+            
+            # Clear any previous analysis data
+            session.pop('clean_data', None)
+            session.pop('selected_methods', None)
+            session.pop('sma_window', None)
+            
+            return redirect(url_for('metrics'))
+            
+        except Exception as e:
+            # Invalid ticker or API error
+            error_msg = "Invalid ticker. Please try again with a valid stock symbol."
+            return render_template('index.html', error=error_msg)
+
+
+@app.route('/metrics', methods=['GET', 'POST'])
+def metrics():
+    """
+    Metrics route: Select analysis methods and fetch/clean data
+    """
+    # Check if user has ticker/period in session
+    if 'ticker' not in session or 'period' not in session:
+        return redirect(url_for('index'))
+    
+    if request.method == 'GET':
+        # Render the metrics selection page
+        return render_template('metrics.html', 
+                             ticker=session['ticker'],
+                             period=session['period'],
+                             error=None)
+    
+    if request.method == 'POST':
+        # Get selected analysis methods
+        selected_methods = []
+        
+        # Check which methods were selected
+        if request.form.get('predictive_model'):
+            selected_methods.append('predictive_model')
+        
+        if request.form.get('sma'):
+            selected_methods.append('sma')
+            # Get SMA window size
+            sma_window = request.form.get('sma_window')
+            
+            # Validate SMA window selection
+            if not sma_window:
+                return render_template('metrics.html',
+                                     ticker=session['ticker'],
+                                     period=session['period'],
+                                     error="Please select a window size for SMA before continuing.")
+            
+            # Store SMA window in session
+            session['sma_window'] = int(sma_window)
+        
+        if request.form.get('daily_returns'):
+            selected_methods.append('daily_returns')
+        
+        if request.form.get('runs'):
+            selected_methods.append('runs')
+        
+        if request.form.get('max_profit'):
+            selected_methods.append('max_profit')
+        
+        # Validate at least one method was selected
+        if not selected_methods:
+            return render_template('metrics.html',
+                                 ticker=session['ticker'],
+                                 period=session['period'],
+                                 error="Please select at least one analysis method.")
+        
+        try:
+            # Fetch and clean data
+            ticker = session['ticker']
+            period = session['period']
+            
+            # Get historical data
+            raw_data = get_hist_data(ticker, period)
+            
+            if raw_data is None:
+                raise ValueError("Failed to fetch data")
+            
+            # Clean the data
+            clean_data = api_data_handler(raw_data)
+            
+            if clean_data is None or clean_data.empty:
+                raise ValueError("Data cleaning failed")
+            
+            # Store clean data and selections in session
+            # Convert DataFrame to JSON for session storage
+            session['clean_data'] = clean_data.to_json()
+            session['selected_methods'] = selected_methods
+            
+            return redirect(url_for('results'))
+            
+        except Exception as e:
+            # Handle data fetching/cleaning errors
+            error_msg = f"Error processing data: {str(e)}. Please try again."
+            return render_template('metrics.html',
+                                 ticker=session['ticker'],
+                                 period=session['period'],
+                                 error=error_msg)
+
+
+@app.route('/results')
+def results():
+    """
+    Results route: Generate analyses and display dashboard
+    """
+    # Validate session data exists
+    required_keys = ['ticker', 'period', 'clean_data', 'selected_methods']
+    for key in required_keys:
+        if key not in session:
+            return redirect(url_for('index'))
+    
+    try:
+        # Retrieve data from session
+        ticker = session['ticker']
+        period = session['period']
+        selected_methods = session['selected_methods']
+        
+        # Convert JSON back to DataFrame
+        import pandas as pd
+        clean_data = pd.read_json(session['clean_data'])
+        
+        # Initialize results dictionary
+        analysis_results = {
+            'ticker': ticker,
+            'period': period,
+            'plots': {},
+            'metrics': {}
+        }
+        
+        # Run analyses in fixed order (as per requirements)
+        
+        # 1. Predictive Model
+        if 'predictive_model' in selected_methods:
+            try:
+                # Generate prediction
+                prediction = forecast_prices(clean_data)
+                analysis_results['metrics']['next_day_prediction'] = prediction
+                
+                # Generate validation plot
+                plot_data = predicted_plot(clean_data)
+                analysis_results['plots']['prediction'] = plot_data
+            except Exception as e:
+                analysis_results['plots']['prediction'] = None
+                analysis_results['metrics']['prediction_error'] = str(e)
+        
+        # 2. SMA (Simple Moving Average)
+        if 'sma' in selected_methods:
+            try:
+                window_size = session.get('sma_window', 20)
+                
+                # Calculate SMA
+                sma_data = calculate_sma(clean_data, window_size)
+                
+                # Generate SMA plot
+                plot_data = plot_price_and_sma(sma_data, window_size)
+                analysis_results['plots']['sma'] = plot_data
+                analysis_results['metrics']['sma_window'] = window_size
+            except Exception as e:
+                analysis_results['plots']['sma'] = None
+                analysis_results['metrics']['sma_error'] = str(e)
+        
+        # 3. Daily Returns
+        if 'daily_returns' in selected_methods:
+            try:
+                # Calculate daily returns
+                returns_data = calculate_daily_returns(clean_data)
+                
+                # Generate returns plot
+                plot_data = plot_daily_returns_plotly(returns_data)
+                analysis_results['plots']['daily_returns'] = plot_data
+                
+                # Add summary statistics
+                analysis_results['metrics']['avg_daily_return'] = returns_data.mean()
+                analysis_results['metrics']['return_volatility'] = returns_data.std()
+            except Exception as e:
+                analysis_results['plots']['daily_returns'] = None
+                analysis_results['metrics']['daily_returns_error'] = str(e)
+        
+        # 4. Max Profit
+        if 'max_profit' in selected_methods:
+            try:
+                # Calculate max profit
+                profit_data = calculate_max_profit(clean_data)
+                
+                # Generate profit plot
+                plot_data = plot_max_profit(clean_data, profit_data)
+                analysis_results['plots']['max_profit'] = plot_data
+                
+                # Add profit metrics
+                analysis_results['metrics']['max_profit'] = profit_data['max_profit']
+                analysis_results['metrics']['buy_date'] = profit_data['buy_date']
+                analysis_results['metrics']['sell_date'] = profit_data['sell_date']
+            except Exception as e:
+                analysis_results['plots']['max_profit'] = None
+                analysis_results['metrics']['max_profit_error'] = str(e)
+        
+        # 5. Runs Analysis
+        if 'runs' in selected_methods:
+            try:
+                # Calculate runs
+                runs_data = calculate_runs(clean_data)
+                
+                # Generate runs plot
+                plot_data = plot_runs(runs_data)
+                analysis_results['plots']['runs'] = plot_data
+                
+                # Add runs statistics
+                analysis_results['metrics']['total_runs'] = runs_data['total_runs']
+                analysis_results['metrics']['avg_run_length'] = runs_data['avg_length']
+                analysis_results['metrics']['longest_run'] = runs_data['longest_run']
+            except Exception as e:
+                analysis_results['plots']['runs'] = None
+                analysis_results['metrics']['runs_error'] = str(e)
+        
+        # Render results page with all analyses
+        return render_template('results.html', 
+                             results=analysis_results,
+                             selected_methods=selected_methods)
+        
+    except Exception as e:
+        # If any critical error occurs, redirect to index with error message
+        flash(f"Error generating results: {str(e)}", 'error')
+        return redirect(url_for('index'))
+
+
+@app.route('/reset')
+def reset():
+    """
+    Optional route to clear session and start over
+    """
+    session.clear()
+    return redirect(url_for('index'))
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """
+    Handle 404 errors
+    """
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    """
+    Handle 500 errors
+    """
+    return render_template('500.html'), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
