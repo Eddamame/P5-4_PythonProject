@@ -3,6 +3,22 @@ metrics.py
 
 Mathematical and statistical functions for
 analyzing time-series data, particularly for financial metrics.
+
+1. SMA Analysis
+parameter:
+    df: pd.DataFrame: cleaned data from data_handler
+    window_size: list of window size by user (datatype: int)
+    
+return:
+    dataframe of the calculated SMA 
+    
+step1: valid the input - check if data,close is in dataframe, check that window size is positive number
+step2: set date as the index and retrieve the close price and convert it into a list
+step3: start the SMA calculation
+step4: store the calculated sma into variable sma
+step5: return the df with the sma column
+step 6: Do error handling in the except clause
+
 """
 
 import pandas as pd
@@ -20,25 +36,22 @@ def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
     try:
         if not {'date', 'close'}.issubset(df.columns):
             raise KeyError("DataFrame must contain 'date' and 'close' columns.")
-        if df.empty:
-            raise ValueError("Input DataFrame is empty.")
         if not all(isinstance(n, int) and n > 0 for n in window_sizes):
             raise ValueError("window_sizes must be a positive integers.")
 
         df = df.set_index('date')
         close_prices = df['close'].tolist()
-        n_data = len(close_prices)
-
+    
         for n in window_sizes:
-            if n_data < n:
-                df[f'sma_{n}'] = [None] * n_data
+            if len(close_prices) < n:
+                df[f'sma_{n}'] = [None] * len(close_prices)
                 continue
 
             sma = [None] * (n - 1)
             window_sum = sum(close_prices[:n])
             sma.append(round(window_sum / n, 2))
 
-            for i in range(n, n_data):
+            for i in range(n, len(close_prices)):
                 window_sum += close_prices[i] - close_prices[i - n]
                 sma.append(round(window_sum / n, 2))
 
