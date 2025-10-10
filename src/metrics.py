@@ -7,17 +7,24 @@ analyzing time-series data, particularly for financial metrics.
 1. SMA Analysis
 parameter:
     df: pd.DataFrame: cleaned data from data_handler
-    window_size: list of window size by user (datatype: int)
-    
+    window_size: list of window size defined by user (datatype: int)    
 return:
     dataframe of the calculated SMA 
-    
-step1: valid the input - check if data,close is in dataframe, check that window size is positive number
-step2: set date as the index and retrieve the close price and convert it into a list
-step3: start the SMA calculation
-step4: store the calculated sma into variable sma
-step5: return the df with the sma column
-step 6: Do error handling in the except clause
+1. Validate inputs
+    Check that 'date' and 'close' columns exist in the DataFrame.
+    Verify that each window size is a positive integer.
+2. Prepare the data
+    Set 'date' as the index.
+    Retrieve the 'close' prices and convert them into a list for easier calculation.
+3. Perform SMA calculation
+    For each window size, compute the average closing price using the sliding window approach.
+    The first n-1 entries will be None since there’s not enough data to calculate SMA.
+4. Store results
+    Save the computed SMA values into a new column (e.g., sma_20, sma_50) in the DataFrame.
+5. Return output
+    Return the updated DataFrame containing all SMA columns.
+6.Error handling
+    Use the except block to catch and print input or unexpected errors without crashing the program.
 
 """
 
