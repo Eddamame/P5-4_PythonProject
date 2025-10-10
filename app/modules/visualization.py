@@ -285,3 +285,14 @@ def display_prediction_comparison_table(test_dates, actual_prices, predicted_pri
     
     # Return the DataFrame in case you want to use it for further analysis
     return df
+
+
+# --- Test Block --- 
+# data = get_hist_data('PLTR', '12mo')
+# df = api_data_handler(data)
+# print(df)
+# runs_df, direction, prices = calculate_runs(df)
+## Testing plot runs 
+# my_plot = plot_runs(runs_df, prices, 6)
+# if my_plot is not None:
+#     my_plot.show()

@@ -100,82 +100,124 @@ def calculate_max_profit(data: pd.DataFrame, stock_name: str,
         return 0.0
  
 # --- Upward and Downward Run Analysis ---
+# older version 
+# def old_calculate_runs(data):
+#     try:
+#         # Check if required columns exist
+#         if 'date' not in data.columns:
+#             raise ValueError("'date' column not found in dataframe")
+#         if 'close' not in data.columns:
+#             raise ValueError("'close' column not found in dataframe")
+        
+#         # Select required columns and copy
+#         prices = data[['date', 'close']].copy()
+        
+#         # Convert date to datetime if not already
+#         if not pd.api.types.is_datetime64_any_dtype(prices['date']):
+#             prices['date'] = pd.to_datetime(prices['date'])
+        
+#         # Check if we have data
+#         if len(prices) == 0:
+#             raise ValueError("No data available")
+        
+#         # Calculate daily changes
+#         close_changes = prices['close'].diff()
+        
+#         # Convert to direction: 1 (up), -1 (down), 0 (no change)
+#         direction = np.sign(close_changes)
+#         direction = direction.fillna(0).astype(int)
+        
+#         # Initialize run tracking
+#         runs = []
+#         current_run_length = 1
+#         current_direction = direction.iloc[0]
+        
+#         # Iterate through directions to find runs
+#         for i in range(1, len(direction)):
+#             if direction.iloc[i] == current_direction and current_direction != 0:
+#                 current_run_length += 1
+#             else:
+#                 # Record the completed run
+#                 if current_direction != 0:
+#                     start_idx = i - current_run_length
+#                     end_idx = i - 1
+                    
+#                     runs.append({
+#                         'start_date': prices.iloc[start_idx]['date'],
+#                         'end_date': prices.iloc[end_idx]['date'],
+#                         'direction': 'Up' if current_direction == 1 else 'Down',
+#                         'length': current_run_length,
+#                         'start_index': start_idx,
+#                         'end_index': end_idx
+#                     })
+                
+#                 current_run_length = 1
+#                 current_direction = direction.iloc[i]
+        
+#         # Record the final run
+#         if current_direction != 0:
+#             start_idx = len(prices) - current_run_length
+#             end_idx = len(prices) - 1
+            
+#             runs.append({
+#                 'start_date': prices.iloc[start_idx]['date'],
+#                 'end_date': prices.iloc[end_idx]['date'],
+#                 'direction': 'Up' if current_direction == 1 else 'Down',
+#                 'length': current_run_length,
+#                 'start_index': start_idx,
+#                 'end_index': end_idx
+#             })
+        
+#         return pd.DataFrame(runs), direction, prices
+        
+#     except Exception as e:
+#         print(f"Error in calculate_runs: {e}")
+#         return pd.DataFrame(), np.array([]), pd.DataFrame()
 
 def calculate_runs(data):
-    """Optimized version with datetime handling"""
+
     try:
-        # Check if required columns exist
-        if 'date' not in data.columns:
-            raise ValueError("'date' column not found in dataframe")
-        if 'close' not in data.columns:
-            raise ValueError("'close' column not found in dataframe")
-        
-        # Select required columns and copy
-        prices = data[['date', 'close']].copy()
-        
-        # Convert date to datetime if not already
-        if not pd.api.types.is_datetime64_any_dtype(prices['date']):
-            prices['date'] = pd.to_datetime(prices['date'])
-        
-        # Check if we have data
-        if len(prices) == 0:
-            raise ValueError("No data available")
-        
-        # Calculate daily changes
-        close_changes = prices['close'].diff()
-        
-        # Convert to direction: 1 (up), -1 (down), 0 (no change)
-        direction = np.sign(close_changes)
-        direction = direction.fillna(0).astype(int)
-        
-        # Initialize run tracking
-        runs = []
-        current_run_length = 1
-        current_direction = direction.iloc[0]
-        
-        # Iterate through directions to find runs
-        for i in range(1, len(direction)):
-            if direction.iloc[i] == current_direction and current_direction != 0:
-                current_run_length += 1
-            else:
-                # Record the completed run
-                if current_direction != 0:
-                    start_idx = i - current_run_length
-                    end_idx = i - 1
-                    
-                    runs.append({
-                        'start_date': prices.iloc[start_idx]['date'],
-                        'end_date': prices.iloc[end_idx]['date'],
-                        'direction': 'Up' if current_direction == 1 else 'Down',
-                        'length': current_run_length,
-                        'start_index': start_idx,
-                        'end_index': end_idx
-                    })
-                
-                current_run_length = 1
-                current_direction = direction.iloc[i]
-        
-        # Record the final run
-        if current_direction != 0:
-            start_idx = len(prices) - current_run_length
-            end_idx = len(prices) - 1
+        #pre-validation 
+        if 'date' not in data.columns or 'close' not in data.columns:
+            raise ValueError("'date' and 'close' columns are required.")
             
-            runs.append({
-                'start_date': prices.iloc[start_idx]['date'],
-                'end_date': prices.iloc[end_idx]['date'],
-                'direction': 'Up' if current_direction == 1 else 'Down',
-                'length': current_run_length,
-                'start_index': start_idx,
-                'end_index': end_idx
-            })
+        df = data[['date', 'close']].copy()
         
-        return pd.DataFrame(runs), direction, prices
+        if not pd.api.types.is_datetime64_any_dtype(df['date']):
+            df['date'] = pd.to_datetime(df['date'])
+
+        # makes the original row numbers accessible for aggregation
+        df = df.reset_index()
         
+        if df.empty:
+            # Return empty structures that match the success case
+            return pd.DataFrame(), pd.Series(dtype=int), pd.DataFrame()
+
+        # calculate direction 
+        direction = df['close'].diff().pipe(np.sign).fillna(0).astype(int)
+
+        # identify runs 
+        run_id = direction.ne(direction.shift()).cumsum()
+
+        # aggregate using groupby
+        is_run = direction != 0
+        
+        runs = df[is_run].groupby(run_id[is_run]).agg(
+            start_date=('date', 'first'),
+            end_date=('date', 'last'),
+            length=('date', 'size'),
+            start_index=('index', 'first'),
+            end_index=('index', 'last')
+        )
+        
+        runs['direction'] = direction[is_run].groupby(run_id[is_run]).first().map({1: 'Up', -1: 'Down'})
+        
+        return runs.reset_index(drop=True), direction, df
+
     except Exception as e:
-        print(f"Error in calculate_runs: {e}")
-        return pd.DataFrame(), np.array([]), pd.DataFrame()
-
-
+        print(f"Error in calculate_runs_optimized: {e}")
+        return pd.DataFrame(), pd.Series(dtype=int), pd.DataFrame()
+    
 # this is a quick view of runs that have reached min length 
 def get_significant_runs(runs_df, min_length=4):
     #Filter runs by minimum length
@@ -190,43 +232,30 @@ def get_significant_runs(runs_df, min_length=4):
     }
 
 
-
 # --- TESTING ---
 # This block allows you to run the file directly to test the functions.
 
 # if __name__ == '__main__':
-#     # Create some sample data
-#     filepath = ''
-#     sample_data = pd.read_csv(filepath, parse_dates=['date'], index_col='date')
-    
+#    data = get_hist_data('AMZN', '12mo')
+#    df = api_data_handler(data)
 
 #     # Test Run Analysis
 #     print("--- Testing Run Analysis for AMZN ---")
-#     prices = get_closing_prices(sample_data, "AMZN")
-    
-#     runs_df, direction = calculate_runs() 
-#     # Can use this to extract notable_up_runs or notable_down_runs
-#     significant_runs = get_significant_runs(runs_df)
-#     print(f"Significant up runs: {significant_runs['up_runs']}")   
-#     print(f"Significant up runs: {significant_runs['down_runs']}") 
-    
-if __name__ == '__main__':
-    # Create some sample data
-    file_path = 'https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true'
-    filterName = ['AMZN']
-    data = data_handler(file_path, filterName)
+
+#    runs_df, direction, prices = calculate_runs(df)
+## Can use this to quick view the significant runs
+#    result = get_significant_runs(runs_df, 5)
+#    print(result['significant_runs'] )
+
+
     
 
-    # Test Run Analysis
-    print("--- Testing Run Analysis for AMZN ---")
+
+
+
     
-    runs_df, direction = calculate_runs(data) 
-    #all runs
-    print(runs_df)
-    #Can use this to extract significant up or down runs
-    significant_runs = get_significant_runs(runs_df, 7)
-    print(f"Significant up runs: {significant_runs['up_runs']}")   
-    print(f"Significant up runs: {significant_runs['down_runs']}") 
+
+   
     
        
     
