@@ -5,14 +5,14 @@ from flask import (
 from datetime import datetime, timedelta
 import json
 import pandas as pd
-import plotly.io as pio # <-- ADDED: For Plotly figure serialization
+import plotly.io as pio 
 
 # 1. DEFINE THE BLUEPRINT OBJECT
-# This object records all your routes.
 main_bp = Blueprint('main', __name__)
 
 from app.modules.data_fetcher import get_hist_data
-from app.modules.data_handler import api_data_handler
+from app.modules.data_handler import api_data_handler, handle_backup_csv # <-- CRITICAL: Importing both cleaning and backup functions
+
 from app.modules.prediction import forecast_prices
 from app.modules.visualization import (
     predicted_plot, 
@@ -33,6 +33,10 @@ from app.modules.metrics import (
 def index():
     """
     Index route: Collect and validate ticker + period
+    
+    The data validation logic (which calls the potentially failing API) 
+    has been moved to the /metrics route to consolidate the primary fetch 
+    and the new fallback mechanism.
     """
     if request.method == 'GET':
         # Render the input form
@@ -48,43 +52,29 @@ def index():
             return render_template('index.html', 
                                    error="Please fill in both ticker and period.")
         
-        # Validate ticker by attempting to fetch data
-        try:
-            # Quick validation call
-            test_data = get_hist_data(ticker, period)
-            if test_data is None or len(test_data) == 0:
-                raise ValueError("No data returned")
-            
-            # If valid, store in session
-            session['ticker'] = ticker
-            session['period'] = period
-            
-            # Clear any previous analysis data
-            session.pop('clean_data', None)
-            session.pop('selected_methods', None)
-            session.pop('sma_window', None)
-            
-            # Note: We use the Blueprint name ('main') to reference the endpoint
-            return redirect(url_for('main.metrics')) 
-            
-        except Exception as e:
-            # Invalid ticker or API error
-            error_msg = f"Invalid ticker or data error: {str(e)}. Please try again."
-            # We can log the error if needed
-            current_app.logger.error(f"Ticker validation failed for {ticker}: {e}")
-            return render_template('index.html', error=error_msg)
+        # Store in session and proceed directly to metrics route for data fetch
+        session['ticker'] = ticker
+        session['period'] = period
+        
+        # Clear any previous analysis data
+        session.pop('clean_data', None)
+        session.pop('selected_methods', None)
+        session.pop('sma_window', None)
+        
+        return redirect(url_for('main.metrics')) 
 
 
 @main_bp.route('/metrics', methods=['GET', 'POST'])
 def metrics():
     """
-    Metrics route: Select analysis methods and fetch/clean data
+    Metrics route: Select analysis methods and fetch/clean data.
+    Implements API fetch with fallback to backup data.
     """
     # Check if user has ticker/period in session
     if 'ticker' not in session or 'period' not in session:
         return redirect(url_for('main.index'))
     
-    # ... (rest of the metrics function remains the same, but imports are removed) ...
+    # --- GET Request Handling ---
     if request.method == 'GET':
         # Render the metrics selection page
         return render_template('metrics.html', 
@@ -92,41 +82,30 @@ def metrics():
                                period=session['period'],
                                error=None)
     
+    # --- POST Request Handling (Data Fetching and Selection) ---
     if request.method == 'POST':
         # Get selected analysis methods
         selected_methods = []
         
-        # Check which methods were selected
+        # Check which methods were selected (logic remains the same)
         if request.form.get('predictive_model'):
             selected_methods.append('predictive_model')
-            # Get prediction window size
             prediction_window = request.form.get('prediction_window')
-
-            # Validate selection
             if not prediction_window:
                 return render_template('metrics.html',
                                        ticker=session['ticker'],
                                        period=session['period'],
                                        error="Please select a window size for Prediction before continuing.")
-
-            # Store in session
             session['prediction_window'] = int(prediction_window)
         
         if request.form.get('sma'):
             selected_methods.append('sma')
-            # Get SMA window size
             sma_window = request.form.get('sma_window')
-            
-            # Validate SMA window selection
             if not sma_window:
                 return render_template('metrics.html',
                                        ticker=session['ticker'],
                                        period=session['period'],
                                        error="Please select a window size for SMA before continuing.")
-            
-            # Store SMA window in session
-            # Note: Assuming this allows multiple selections (e.g., "10,20,50") if the form supports it.
-            # Otherwise, store as a single integer. For simplicity, we'll store the raw string/int for now.
             session['sma_window'] = sma_window
         
         if request.form.get('daily_returns'):
@@ -138,33 +117,45 @@ def metrics():
         if request.form.get('max_profit'):
             selected_methods.append('max_profit')
         
-        # Validate at least one method was selected
         if not selected_methods:
             return render_template('metrics.html',
                                    ticker=session['ticker'],
                                    period=session['period'],
                                    error="Please select at least one analysis method.")
         
+        # --- Data Fetching Logic with Fallback ---
         try:
-            # Fetch and clean data
             ticker = session['ticker']
             period = session['period']
             
-            # Get historical data
-            raw_data = get_hist_data(ticker, period)
+            try:
+                # Attempt 1: Fetch data from yfinance API
+                raw_data = get_hist_data(ticker, period)
+                
+                if raw_data is None or raw_data.empty:
+                     # Treat empty API response as a soft failure, forcing fallback
+                    raise ValueError("API returned no data.")
+                
+                # Clean the API data (Data Frame -> Clean Data Frame)
+                clean_data = api_data_handler(raw_data, ticker=ticker)
+
+            except Exception as api_e:
+                # If API fails, use backup CSV handler
+                current_app.logger.error(f"API data fetch failed for {ticker}: {api_e}. Falling back to backup CSV handler.")
+                
+                # Attempt 2: Load and Process Backup Data using the dedicated handler
+                clean_data = handle_backup_csv(ticker, period) 
+
+                # Update session to indicate backup use and notify user
+                session['ticker'] = f"{ticker} (BACKUP)"
+                flash(f"Warning: Failed to fetch live data for {ticker}. Using backup historical dataset instead.", 'warning')
             
-            if raw_data is None:
-                raise ValueError("Failed to fetch data")
-            
-            # Clean the data
-            clean_data = api_data_handler(raw_data)
             
             if clean_data is None or clean_data.empty:
-                raise ValueError("Data cleaning failed")
+                raise ValueError("Both API fetch/clean and backup data processing failed.")
             
             # Store clean data and selections in session
-            # Convert DataFrame to JSON for session storage
-            session['clean_data'] = clean_data.to_json(date_format='iso', orient='split') # Using a standard format
+            session['clean_data'] = clean_data.to_json(date_format='iso', orient='split')
             session['selected_methods'] = selected_methods
             
             return redirect(url_for('main.results'))
@@ -207,7 +198,7 @@ def results():
             'period': period,
             'plots': {},
             'metrics': {}
-        }
+        } 
         
         # Run analyses in fixed order (as per requirements)
         
@@ -268,7 +259,7 @@ def results():
         if 'daily_returns' in selected_methods:
             try:
                 # Calculate daily returns
-                returns_data = calculate_daily_returns(clean_data) # Removed ticker argument, as calculate_daily_returns doesn't use it.
+                returns_data = calculate_daily_returns(clean_data) 
                 
                 # Generate returns plot
                 fig = plot_daily_returns_plotly(returns_data, ticker)
@@ -313,10 +304,9 @@ def results():
         if 'runs' in selected_methods:
             try:
                 # Unpack the tuple returned by calculate_runs
-                # calculate_runs returns (runs_df, direction (now removed from metric), prices)
                 runs_data = calculate_runs(clean_data)
                 runs_df = runs_data[0]
-                prices = runs_data[2] # Use the original df or df from calculate_runs (index 2)
+                prices = runs_data[2] 
 
                 # Generate runs plot using the DataFrame (assuming default min_length=4 in visualization)
                 fig = plot_runs(runs_df, prices)
