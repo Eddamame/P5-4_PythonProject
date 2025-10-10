@@ -9,7 +9,7 @@ from app.modules.visualization import (
     predicted_plot, 
     plot_price_and_sma,
     plot_daily_returns_plotly,
-    plot_max_profit, 
+    plot_max_profit_segments, 
     plot_runs)
 from app.modules.metrics import (
     calculate_sma,
@@ -87,6 +87,18 @@ def metrics():
         # Check which methods were selected
         if request.form.get('predictive_model'):
             selected_methods.append('predictive_model')
+            # Get prediction window size
+            prediction_window = request.form.get('prediction_window')
+
+            # Validate selection
+            if not prediction_window:
+                return render_template('metrics.html',
+                                    ticker=session['ticker'],
+                                    period=session['period'],
+                                    error="Please select a window size for Prediction before continuing.")
+
+            # Store in session
+            session['prediction_window'] = int(prediction_window)
         
         if request.form.get('sma'):
             selected_methods.append('sma')
@@ -186,16 +198,17 @@ def results():
         # 1. Predictive Model
         if 'predictive_model' in selected_methods:
             try:
-                # Generate prediction
-                prediction = forecast_prices(clean_data)
+                # Run Forecast. default value for prediction window: 10 days
+                window_size = session.get('prediction_window', 10)
+                prediction = forecast_prices(clean_data, window_size)
                 analysis_results['metrics']['next_day_prediction'] = prediction
-                
-                # Generate validation plot
-                plot_data = predicted_plot(clean_data)
+                # plot data
+                plot_data = predicted_plot(clean_data, window_size)
                 analysis_results['plots']['prediction'] = plot_data
             except Exception as e:
                 analysis_results['plots']['prediction'] = None
                 analysis_results['metrics']['prediction_error'] = str(e)
+
         
         # 2. SMA (Simple Moving Average)
         if 'sma' in selected_methods:
@@ -237,7 +250,7 @@ def results():
                 profit_data = calculate_max_profit(clean_data)
                 
                 # Generate profit plot
-                plot_data = plot_max_profit(clean_data, profit_data)
+                plot_data = plot_max_profit_segments(clean_data, profit_data)
                 analysis_results['plots']['max_profit'] = plot_data
                 
                 # Add profit metrics
@@ -251,17 +264,18 @@ def results():
         # 5. Runs Analysis
         if 'runs' in selected_methods:
             try:
-                # Calculate runs
-                runs_data = calculate_runs(clean_data)
-                
-                # Generate runs plot
-                plot_data = plot_runs(runs_data)
+                # Unpack the tuple returned by calculate_runs
+                runs_df, direction, df = calculate_runs(clean_data)
+
+                # Generate runs plot using the DataFrame
+                plot_data = plot_runs(runs_df)
                 analysis_results['plots']['runs'] = plot_data
-                
-                # Add runs statistics
-                analysis_results['metrics']['total_runs'] = runs_data['total_runs']
-                analysis_results['metrics']['avg_run_length'] = runs_data['avg_length']
-                analysis_results['metrics']['longest_run'] = runs_data['longest_run']
+
+                # Add runs statistics derived from runs_df
+                analysis_results['metrics']['total_runs'] = len(runs_df)
+                analysis_results['metrics']['avg_run_length'] = runs_df['length'].mean()
+                analysis_results['metrics']['longest_run'] = runs_df['length'].max()
+
             except Exception as e:
                 analysis_results['plots']['runs'] = None
                 analysis_results['metrics']['runs_error'] = str(e)
