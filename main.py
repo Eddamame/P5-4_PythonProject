@@ -5,9 +5,9 @@
 
 #from app.modules.metrics import calculate_runs, get_significant_runs
 #from app.modules.visualization import plot_price_and_sma, plot_max_profit_segments, plot_runs
-# from app.modules.prediction import validate_and_plot, predict_next_day, plot_actual_prices
+from app.modules.prediction import validate_model, forecast_prices
+from app.modules.visualization import validation_plot, validation_table
 from app.modules.data_fetcher import get_hist_data
-
 from app.modules.data_handler import api_data_handler
 
 # def main():
@@ -38,10 +38,10 @@ from app.modules.data_handler import api_data_handler
 
 data = get_hist_data('GM', '12mo')
 df = api_data_handler(data)
-runs_df, direction, prices = calculate_runs(df)
-my_plot = plot_runs(runs_df, prices, 3)
-if my_plot is not None:
-    my_plot.show()
+# runs_df, direction, prices = calculate_runs(df)
+# my_plot = plot_runs(runs_df, prices, 3)
+# if my_plot is not None:
+#     my_plot.show()
 
 
 # Test visualizations for daily returns and max profit
@@ -60,17 +60,15 @@ if my_plot is not None:
 
 # --- Model Validation ---
 # Call validate_model and capture the returned actual and predicted values
-#test_dates, actual_prices, predicted_prices = validate_model(df, target_column='close')
+test_dates, actual_prices, predicted_prices = validate_model(df, target_column='close')
 
 # # --- Visualization ---
 # # Call the new plotting function with the captured data
-#plot_prediction_vs_actual_line(test_dates, actual_prices, predicted_prices)
+validation_plot(test_dates, actual_prices, predicted_prices)
 
 # # Display the comparison table
-#display_prediction_comparison_table(test_dates, actual_prices, predicted_prices)
+validation_table(test_dates, actual_prices, predicted_prices)
 
 # # --- Future Forecasting ---
-future_dates, future_predictions = forecast_prices(data=df, target_column='close')
-
-if future_predictions:
-    predicted_plot(df, future_dates, future_predictions)
+n_days = input("Enter number of days to forecast (e.g., 5): ").strip()
+forecast_prices(df, target_column='close', n_days=int(n_days))

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+from app.modules.visualization import predicted_plot
 """
 The goal of this module is to implement a multiple linear regression model
 to predict stock prices based on the features in the dataset.
@@ -56,17 +57,24 @@ def add_intercept(features):
     """
     Add an intercept column (a column of ones) to the feature matrix.
     This is necessary for calculating the intercept term (b0) in the regression.
+
     Parameters:
         features (np.array): The input features for training
+
     Returns:
         features_with_intercept (np.array): The feature matrix with an added intercept column.
+
     """
-    # Intercept is needed for b0, to ensure the matrix has the correct dimensions
-    # Prediction = b0*intercept + b1*x1 + b2*x2 + ..., without it, the matrix multiplication won't work
-    intercept = np.ones((features.shape[0], 1))
-    # Add intercept column to the features matrix with np.hstack
-    features_with_intercept = np.hstack((intercept, features))
-    return features_with_intercept
+    try:
+        # Intercept is needed for b0, to ensure the matrix has the correct dimensions
+        # Prediction = b0*intercept + b1*x1 + b2*x2 + ...
+        intercept = np.ones((features.shape[0], 1))
+        # Add intercept column to the features matrix with np.hstack
+        features_with_intercept = np.hstack((intercept, features))
+        return features_with_intercept
+    except Exception as e:
+        print(f"Error in add_intercept(): Error adding intercept column. {e}")
+        raise
 
 
 def calculate_coefficients(features, target):
@@ -76,18 +84,24 @@ def calculate_coefficients(features, target):
     Parameters:
         features (np.array): The input features for training
         target (np.array): The target for prediction
+
     Returns:
         coefficients (np.array): coefficients [b0, b1, b2, ...]
+
     """
-    # Add intercept column to the features matrix
-    features_with_intercept = add_intercept(features)
-
-    # Apply the Normal Equation: coefficients = ((x_transpose)*X)^-1 * (x_transpose)*y
-    x_transpose = features_with_intercept.T
-    coefficients = np.linalg.pinv(x_transpose @ features_with_intercept) @ x_transpose @ target
-    
-    return coefficients
-
+    try:
+        # Add intercept column to the features matrix
+        features_with_intercept = add_intercept(features)
+        # Apply the Normal Equation: coefficients = ((x_transpose)*X)^-1 * (x_transpose)*y
+        x_transpose = features_with_intercept.T
+        coefficients = np.linalg.pinv(x_transpose @ features_with_intercept) @ x_transpose @ target
+        return coefficients
+    except np.linalg.LinAlgError as e:
+        print(f"Error in calculate_coefficients(): Error can happen due to perfect correlation in features. {e}")
+        raise
+    except Exception as e:
+        print(f"Error in calculate_coefficients(): Unexpected Error. {e}")
+        raise
 
 def predict(features, coefficients):
     """
@@ -95,15 +109,25 @@ def predict(features, coefficients):
     Parameters:
         features (np.array): The input features for prediction.
         coefficients (np.array): The fitted coefficients from the model.
+
     Returns:
         predictions (np.array): The predicted values
-    """
-    # Add intercept column to the features matrix
-    features_with_intercept = add_intercept(features)
 
-    # Make predictions: predictions = X * coefficients
-    predictions = features_with_intercept @ coefficients
-    return predictions
+    """
+    try:
+        # Add intercept column to the features matrix
+        features_with_intercept = add_intercept(features)
+        # Ensure same number of features and coefficients
+        if features_with_intercept.shape[1] != coefficients.shape[0]:
+            raise ValueError(f"Error in predict(): Feature and coefficient dimensions do not match. Feature: {features_with_intercept.shape[1]}, Coefficients: {len(coefficients)}")
+
+        # Make predictions: predictions = X * coefficients
+        predictions = features_with_intercept @ coefficients
+        return predictions
+    except ValueError as e:
+        print(f"Error in predict(). Different number of features and coefficients. {e}")
+    except Exception as e:
+        print(f"Error in predict(). Unexpected Error. {e}")
 
 def validate_model(data, target_column, test_size=0.2):
     """
@@ -112,96 +136,92 @@ def validate_model(data, target_column, test_size=0.2):
         data (pd.DataFrame): The input dataframe containing features and target
         target_column (str): The name of the target column in the dataframe
         test_size (float): Proportion of the dataset to include in the test split (default is 0.2)
+
     Returns:
         date_test (pd.Series): test set dates for plotting
         target_test (np.array): Actual target values from test set
         predictions_on_test_data (np.array): Predicted target values for test set
+
     """
     print("--- Starting Model Validation ---")
-    
-    # Step 1: Prepare features and target from the dataframe
-    # Features are the inputs (e.g., Open, High, Low, Volume)
-    # Target is the output we want to predict (e.g., Close)
-    dates = data['date']
-    features = data.drop(columns=['date', target_column]).values
-    target = data[target_column].values
-
-    # Step 2: Split the data into training and testing sets. Date is also splitted for plotting later
-    # random_state=123 to ensure data is split the same way every time
-    features_train, features_test, target_train, target_test, date_train, date_test = train_test_split(
-        features, target, dates, test_size=test_size, random_state=123
-    )
-    print(f"Data split into {len(features_train)} training samples and {len(features_test)} testing samples.")
-
-    # Step 3: Train the model by calculating coefficients using only training data(features_train and target_train).
-    coefficients = calculate_coefficients(features_train, target_train)
-
-    # Step 4: Make predictions on the test data.
-    predictions_on_test_data = predict(features_test, coefficients)
-
-    # Step 5: Evaluate the model by comparing predictions to the actual values.
-    mse = mean_squared_error(target_test, predictions_on_test_data)
-    r2 = r2_score(target_test, predictions_on_test_data)
-    
-    print("\n--- Model Validation Metrics ---")
-    print(f"Mean Squared Error (MSE): {mse:.3f}")
-    print(f"R-Squared (R²): {r2:.3f}")
-    print("------------------------------\n")
-
-    # Return values needed for plotting
-    return date_test, target_test, predictions_on_test_data
-
-def forecast_prices(data, target_column):
-    """
-        Predict future prices for the next 'n' days using an iterative approach.
-        This method uses its own predictions to create features for subsequent predictions.
-
-        Parameters:
-            data (pd.DataFrame): The historical data to train the model on.
-            target_column (str): The name of the column we want to predict.
-            n_days (int): The number of future days to predict.
-
-        Returns:
-            predictions (list): A list of predicted values for the next 'n' days.
-        """
-    while True:
-        try:
-            # Get user input for the number of days
-            n_days_input = input("Enter number of days to forecast (or 'q' to quit): ").strip()
-
-            # Allow user to quit
-            if n_days_input.lower() in ['q', 'quit']:
-                print("Forecast canceled.")
-                return []
-
-            # Convert input to an integer
-            n_days = int(n_days_input)
-
-            # Validate the input range
-            if n_days < 1:
-                print("Error: Number of days must be at least 1.")
-                continue  # Ask for input again
-
-            if n_days > 30:
-                print("Warning: Forecasting more than 30 days ahead is highly unreliable with this model.")
-                confirm = input("Do you want to continue anyway? (y/n): ").strip().lower()
-                if confirm != 'y':
-                    continue # Ask for input again
-            
-            # If input is valid, break the loop and proceed to forecasting
-            break
-
-        except ValueError:
-            print("Invalid input. Please enter a whole number.")
-        except KeyboardInterrupt:
-            print("\nForecast canceled.")
-            return [], []
-
-    # --- Forecasting Logic ---
     try:
+        # Ensure the dataframe is not empty
+        if data.empty:
+            raise ValueError("Error: Input dataframe is empty.")
+        
+        # Ensure required columns are present
+        required_cols = ['date', target_column]
+        if not all(col in data.columns for col in required_cols):
+            raise KeyError(f"Error: Dataframe must contain columns: {required_cols}")
+        
+        # Step 1: Prepare features and target from the dataframe
+        # Features are the inputs (e.g., Open, High, Low, Volume)
+        # Target is the output we want to predict (e.g., Close)
+        dates = data['date']
+        features = data.drop(columns=['date', target_column]).values
+        target = data[target_column].values
+
+        # Step 2: Split the data into training and testing sets. Date is also splitted for plotting later
+        # random_state=123 to ensure data is split the same way every time
+        features_train, features_test, target_train, target_test, date_train, date_test = train_test_split(
+            features, target, dates, test_size=test_size, random_state=123
+        )
+        print(f"Data split into {len(features_train)} training samples and {len(features_test)} testing samples.")
+
+        # Step 3: Train the model by calculating coefficients using only training data(features_train and target_train).
+        coefficients = calculate_coefficients(features_train, target_train)
+
+        # Step 4: Make predictions on the test data.
+        predictions_on_test_data = predict(features_test, coefficients)
+
+        # Step 5: Evaluate the model by comparing predictions to the actual values.
+        mse = mean_squared_error(target_test, predictions_on_test_data)
+        r2 = r2_score(target_test, predictions_on_test_data)
+        
+        print("\n--- Model Validation Metrics ---")
+        print(f"Mean Squared Error (MSE): {mse:.3f}")
+        print(f"R-Squared (R²): {r2:.3f}")
+        print("------------------------------\n")
+
+        # Return values needed for plotting
+        return date_test, target_test, predictions_on_test_data
+    
+    except (ValueError, KeyError) as e:
+        print(f"Error in validate_model(): {e}")
+    except Exception as e:
+        print(f"Error in validate_model(): Unexpected Error. {e}")
+
+def forecast_prices(data, target_column, n_days: int):
+    """
+    Predicts future prices for a given number of days and plots the result.
+
+    Parameters:
+        data (pd.DataFrame): The historical data to train the model on.
+        target_column (str): The name of the column we want to predict.
+        n_days (int): The number of future days to predict.
+
+    Outputs:
+        Next n_days predictions: Shown in console
+        predicted_plot: Plot showing historical and predicted prices
+    """
+    try:
+        # Ensure n_days is a positive integer
+        if not isinstance(n_days, int) or n_days < 1:
+            print("Error: Number of days for forecast must be a positive integer.")
+            return
+        
+        # Ensure the dataframe is not empty
+        if data.empty:
+            raise ValueError("Error: Input dataframe is empty.")
+        
+        # Ensure required columns are present
+        required_cols = ['date', target_column]
+        if not all(col in data.columns for col in required_cols):
+            raise KeyError(f"Error: Dataframe must contain columns: {required_cols}")
+        
         print(f"\n--- Predicting Next {n_days} Day(s) ---")
         
-        # Step 1: Train the model on the ENTIRE historical dataset
+        # Step 1: Train the model on the entie historical dataset
         features = data.drop(columns=['date', target_column]).values
         target = data[target_column].values
         coefficients = calculate_coefficients(features, target)
@@ -211,10 +231,10 @@ def forecast_prices(data, target_column):
         average_volume = data['volume'].mean()
         last_date = data['date'].iloc[-1]
 
-        # Generate future dates
+        # Step 3: Generate future dates for plotting
         future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=n_days).to_pydatetime().tolist()
 
-        # Step 3: Iteratively predict for n_days
+        # Step 4: Iteratively predict for n_days
         future_predictions = []
         current_features = last_known_features
 
@@ -223,23 +243,26 @@ def forecast_prices(data, target_column):
             future_predictions.append(next_prediction)
             print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
 
-            # Create synthetic features for the next iteration
+            # Make previous day's close prediction into next day's features
             next_features = np.array([[
-                next_prediction,    # Open
-                next_prediction,    # High
-                next_prediction,    # Low
-                average_volume      # Volume
+                next_prediction, #Open
+                next_prediction, #High
+                next_prediction, #Low
+                average_volume #Volume
             ]])
             current_features = next_features
 
         print("----------------------------------\n")
-        return future_dates, future_predictions
-
+        
+        # Call the plotting function
+        predicted_plot(data, future_dates, future_predictions)
+        
     except Exception as e:
         print(f"An unexpected error occurred during forecasting: {e}")
-        return [], []
     
 """
+Notes
+
 add_intercept(features)
     - Calculates intercept column for features matrix
     - Uses features (independent variables)
