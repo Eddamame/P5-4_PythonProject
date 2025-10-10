@@ -6,5 +6,5 @@ yfinance
 requests
 numpy
 scikit-learn
-matplotlib
 plotly
+json 

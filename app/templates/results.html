@@ -31,15 +31,10 @@
             Results for {{ results.ticker }} ({{ results.period }})
         </h1>
 
-        <!-- Predictive Model -->
+       <!-- Predictive Model -->
         {% if 'predictive_model' in selected_methods %}
         <div class="chart-card large-chart">
             <h2 class="chart-title">Predictive Model</h2>
-            {% if results.metrics.next_day_prediction %}
-                <h3 class="subheader">
-                    Tomorrow's Forecasted Close: 
-                </h3>
-            {% endif %}
             {% if results.plots.prediction %}
                 {{ results.plots.prediction|safe }}
             {% else %}

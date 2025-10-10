@@ -200,11 +200,11 @@ def results():
             try:
                 # Run Forecast. default value for prediction window: 10 days
                 window_size = session.get('prediction_window', 10)
-                prediction = forecast_prices(clean_data, window_size)
-                analysis_results['metrics']['next_day_prediction'] = prediction
-                # plot data
-                plot_data = predicted_plot(clean_data, window_size)
+
+                # Generate only the chart
+                plot_data = forecast_prices(clean_data, window_size)
                 analysis_results['plots']['prediction'] = plot_data
+
             except Exception as e:
                 analysis_results['plots']['prediction'] = None
                 analysis_results['metrics']['prediction_error'] = str(e)
