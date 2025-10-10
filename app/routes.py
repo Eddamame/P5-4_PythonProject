@@ -1,6 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import (
+    Blueprint, render_template, request, redirect, 
+    url_for, session, flash, current_app
+)
 from datetime import datetime, timedelta
 import json
+import pandas as pd
+
+# 1. DEFINE THE BLUEPRINT OBJECT
+# This object records all your routes.
+main_bp = Blueprint('main', __name__)
+
+# NOTE: We no longer import Flask or create an 'app' instance here.
+# The main_bp object replaces the 'app' for routing decorators.
 
 from app.modules.data_fetcher import get_hist_data
 from app.modules.data_handler import api_data_handler
@@ -10,7 +21,8 @@ from app.modules.visualization import (
     plot_price_and_sma,
     plot_daily_returns_plotly,
     plot_max_profit_segments, 
-    plot_runs)
+    plot_runs
+)
 from app.modules.metrics import (
     calculate_sma,
     calculate_daily_returns,
@@ -18,10 +30,8 @@ from app.modules.metrics import (
     calculate_runs
 )
 
-app = Flask(__name__)
-app.secret_key = 'P5-4'  # Change this to a secure random key
 
-@app.route('/', methods=['GET', 'POST'])
+@main_bp.route('/', methods=['GET', 'POST'])
 def index():
     """
     Index route: Collect and validate ticker + period
@@ -38,7 +48,7 @@ def index():
         # Basic validation
         if not ticker or not period:
             return render_template('index.html', 
-                                 error="Please fill in both ticker and period.")
+                                   error="Please fill in both ticker and period.")
         
         # Validate ticker by attempting to fetch data
         try:
@@ -56,29 +66,33 @@ def index():
             session.pop('selected_methods', None)
             session.pop('sma_window', None)
             
-            return redirect(url_for('metrics'))
+            # Note: We use the Blueprint name ('main') to reference the endpoint
+            return redirect(url_for('main.metrics')) 
             
         except Exception as e:
             # Invalid ticker or API error
-            error_msg = "Invalid ticker. Please try again with a valid stock symbol."
+            error_msg = f"Invalid ticker or data error: {str(e)}. Please try again."
+            # We can log the error if needed
+            current_app.logger.error(f"Ticker validation failed for {ticker}: {e}")
             return render_template('index.html', error=error_msg)
 
 
-@app.route('/metrics', methods=['GET', 'POST'])
+@main_bp.route('/metrics', methods=['GET', 'POST'])
 def metrics():
     """
     Metrics route: Select analysis methods and fetch/clean data
     """
     # Check if user has ticker/period in session
     if 'ticker' not in session or 'period' not in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     
+    # ... (rest of the metrics function remains the same, but imports are removed) ...
     if request.method == 'GET':
         # Render the metrics selection page
         return render_template('metrics.html', 
-                             ticker=session['ticker'],
-                             period=session['period'],
-                             error=None)
+                               ticker=session['ticker'],
+                               period=session['period'],
+                               error=None)
     
     if request.method == 'POST':
         # Get selected analysis methods
@@ -93,9 +107,9 @@ def metrics():
             # Validate selection
             if not prediction_window:
                 return render_template('metrics.html',
-                                    ticker=session['ticker'],
-                                    period=session['period'],
-                                    error="Please select a window size for Prediction before continuing.")
+                                     ticker=session['ticker'],
+                                     period=session['period'],
+                                     error="Please select a window size for Prediction before continuing.")
 
             # Store in session
             session['prediction_window'] = int(prediction_window)
@@ -153,7 +167,7 @@ def metrics():
             session['clean_data'] = clean_data.to_json()
             session['selected_methods'] = selected_methods
             
-            return redirect(url_for('results'))
+            return redirect(url_for('main.results'))
             
         except Exception as e:
             # Handle data fetching/cleaning errors
@@ -164,7 +178,7 @@ def metrics():
                                  error=error_msg)
 
 
-@app.route('/results')
+@main_bp.route('/results')
 def results():
     """
     Results route: Generate analyses and display dashboard
@@ -173,7 +187,7 @@ def results():
     required_keys = ['ticker', 'period', 'clean_data', 'selected_methods']
     for key in required_keys:
         if key not in session:
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
     
     try:
         # Retrieve data from session
@@ -182,7 +196,6 @@ def results():
         selected_methods = session['selected_methods']
         
         # Convert JSON back to DataFrame
-        import pandas as pd
         clean_data = pd.read_json(session['clean_data'])
         
         # Initialize results dictionary
@@ -259,7 +272,7 @@ def results():
         if 'runs' in selected_methods:
             try:
                 # Unpack the tuple returned by calculate_runs
-                runs_df, direction, df = calculate_runs(clean_data)
+                runs_df, direction, df_cleaned = calculate_runs(clean_data) # Renamed to avoid shadowing
 
                 # Generate runs plot using the DataFrame
                 plot_data = plot_runs(runs_df)
@@ -281,34 +294,30 @@ def results():
         
     except Exception as e:
         # If any critical error occurs, redirect to index with error message
-        flash(f"Error generating results: {str(e)}", 'error')
-        return redirect(url_for('index'))
+        flash(f"Critical error generating results: {str(e)}", 'error')
+        return redirect(url_for('main.index'))
 
 
-@app.route('/reset')
+@main_bp.route('/reset')
 def reset():
     """
     Optional route to clear session and start over
     """
     session.clear()
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))
 
 
-@app.errorhandler(404)
+@main_bp.errorhandler(404)
 def page_not_found(e):
     """
-    Handle 404 errors
+    Handle 404 errors (uses main_bp.errorhandler now)
     """
     return render_template('404.html'), 404
 
 
-@app.errorhandler(500)
+@main_bp.errorhandler(500)
 def internal_server_error(e):
     """
-    Handle 500 errors
+    Handle 500 errors (uses main_bp.errorhandler now)
     """
     return render_template('500.html'), 500
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
