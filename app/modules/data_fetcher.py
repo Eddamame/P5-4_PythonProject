@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 import requests 
-import json # New: Required for JSONDecodeError
+import json 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta 
 
@@ -76,5 +76,4 @@ def get_hist_data(ticker: str, period: str):
         
     except Exception as e:
         # This catches network errors (retried by tenacity) or the ValueError above.
-        # It also catches any retryable errors that tenancy failed to handle automatically.
         raise ValueError(f"No historical data could be found for Ticker: {ticker}. Error: {e}")
