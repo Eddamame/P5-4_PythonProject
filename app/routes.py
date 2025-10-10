@@ -230,15 +230,16 @@ def results():
         if 'daily_returns' in selected_methods:
             try:
                 # Calculate daily returns
-                returns_data = calculate_daily_returns(clean_data)
+                returns_data = calculate_daily_returns(clean_data, ticker)
                 
                 # Generate returns plot
                 plot_data = plot_daily_returns_plotly(returns_data)
                 analysis_results['plots']['daily_returns'] = plot_data
                 
                 # Add summary statistics
-                analysis_results['metrics']['avg_daily_return'] = returns_data.mean()
-                analysis_results['metrics']['return_volatility'] = returns_data.std()
+                analysis_results['metrics']['avg_daily_return'] = returns_data['Daily_Return'].mean()
+                analysis_results['metrics']['return_volatility'] = returns_data['Daily_Return'].std()
+
             except Exception as e:
                 analysis_results['plots']['daily_returns'] = None
                 analysis_results['metrics']['daily_returns_error'] = str(e)
@@ -247,7 +248,7 @@ def results():
         if 'max_profit' in selected_methods:
             try:
                 # Plot data and return max profit
-                plot_data = plot_max_profit_segments(clean_data)
+                plot_data = plot_max_profit_segments(clean_data, ticker)
                 analysis_results['plots']['max_profit'] = plot_data
                 
             except Exception as e:
