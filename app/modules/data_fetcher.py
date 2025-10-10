@@ -12,8 +12,9 @@ from dateutil.relativedelta import relativedelta
     # Stop retrying after 5 attempts.
     stop=stop_after_attempt(5),
     
-    # Only retry if a connection or HTTP error occurred.
-    retry=retry_if_exception_type((requests.exceptions.HTTPError, requests.exceptions.ConnectionError))
+    # FIX: Include the general 'Exception' class to retry on yfinance internal errors 
+    # like YFTzMissingError, which are not network errors.
+    retry=retry_if_exception_type((requests.exceptions.HTTPError, requests.exceptions.ConnectionError, Exception))
 )
 def get_hist_data(ticker: str, period: str):
     """
@@ -41,7 +42,8 @@ def get_hist_data(ticker: str, period: str):
     
     try:
         # --- 2. Data Fetching ---
-        # Use start/end dates for robustness and set ignore_tz=True
+        # Use start/end dates for robustness and set ignore_tz=True to bypass 
+        # yfinance's strict timezone check that causes YFTzMissingError.
         stock_df = yf.download(
             ticker, 
             start=start_date, 
@@ -53,6 +55,7 @@ def get_hist_data(ticker: str, period: str):
 
         if stock_df.empty:
             # If yfinance returns an empty DataFrame, raise a ValueError.
+            # This will NOT be retried by tenacity.
             raise ValueError(f"No data returned by API for Ticker: {ticker} and Period: {period}.")
 
         # --- 3. Clean and Format Data ---
@@ -68,5 +71,7 @@ def get_hist_data(ticker: str, period: str):
         return stock_df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
         
     except Exception as e:
-        # This catches network errors (retried by tenacity) or the ValueError above.
+        # This catches internal errors (retried by tenacity) or the ValueError above 
+        # (which is not retried if it's not the last attempt).
+        # We re-raise the error to let the Flask route handle the final failure.
         raise ValueError(f"No historical data could be found for Ticker: {ticker}. Error: {e}")
