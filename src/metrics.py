@@ -17,18 +17,31 @@ from typing import List, Union
 
 # --- SMA Analysis ---
 def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
-    filtered_df = filtered_df.set_index('date')
+    #set date as Index
+    filtered_df = df.set_index('date')
+    # retrieve the closing price of the stock
     closed_price = filtered_df['close']
+    # loop through the window_sizes
     for n in window_sizes:
+        #initialise an empty list to store SMA and set window_size to 0
         sma = []
+        window_sum=0
+        #Calculate SMA for each data point
         for i in range(len(closed_price)):
-                if i < n - 1:
-                    sma.append(None)  # Always create the column
-                else:
-                    window = closed_price[i - n + 1 : i + 1]
-                    sma.append(round(sum(window)/n, 2))
+            # add new element into the window_sum
+            window_sum += closed_price[i]  
+            # remove the element if the window exceed n
+            if i >= n:
+                window_sum -= closed_price[i - n]  
+            # if the data is insufficient for a specific window it will append None back to the SMA list
+            if i < n - 1:
+                sma.append(None)
+            # else it will compute the SMA for the given window and would be append back to the SMA list in 2 d.p.    
+            else:
+                sma.append(round(window_sum / n, 2))
+        #add SMA column to the dataframe            
         filtered_df[f'sma_{n}'] = sma  # Column always exists
-
+    #return the filtered_df with one or more SMA
     return filtered_df
 
 # --- Daily Returns --- 
