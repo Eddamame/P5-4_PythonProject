@@ -7,7 +7,8 @@ analyzing time-series data, particularly for financial metrics.
 
 import pandas as pd
 import numpy as np
-from .data_handler import *
+from data_handler import *
+from data_fetcher import *
 import pandas as pd
 from typing import Optional
 from typing import List, Union
@@ -15,25 +16,32 @@ from typing import List, Union
 
 
 # --- SMA Analysis ---
-df =data_handler('https://github.com/Eddamame/P5-4_PythonProject/blob/main/data/StockAnalysisDataset.csv?raw=true')
-# Create a new column year
-df['year'] = pd.DatetimeIndex(df['date']).year
-# filter out the Name 
-stock_name = pd.unique(df['name'])
-def calculate_sma(stock_name, window_sizes):
-    filtered_df = df[(df['name'] == stock_name) & (df['year'] > 2015)].copy()
-    filtered_df = filtered_df.set_index('date')
+def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
+    #set date as Index
+    filtered_df = df.set_index('date')
+    # retrieve the closing price of the stock
     closed_price = filtered_df['close']
+    # loop through the window_sizes
     for n in window_sizes:
+        #initialise an empty list to store SMA and set window_size to 0
         sma = []
+        window_sum=0
+        #Calculate SMA for each data point
         for i in range(len(closed_price)):
-                if i < n - 1:
-                    sma.append(None)  # Always create the column
-                else:
-                    window = closed_price[i - n + 1 : i + 1]
-                    sma.append(round(sum(window)/n, 2))
+            # add new element into the window_sum
+            window_sum += closed_price[i]  
+            # remove the element if the window exceed n
+            if i >= n:
+                window_sum -= closed_price[i - n]  
+            # if the data is insufficient for a specific window it will append None back to the SMA list
+            if i < n - 1:
+                sma.append(None)
+            # else it will compute the SMA for the given window and would be append back to the SMA list in 2 d.p.    
+            else:
+                sma.append(round(window_sum / n, 2))
+        #add SMA column to the dataframe            
         filtered_df[f'sma_{n}'] = sma  # Column always exists
-
+    #return the filtered_df with one or more SMA
     return filtered_df
 
 # --- Daily Returns --- 

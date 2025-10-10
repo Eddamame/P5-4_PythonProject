@@ -6,19 +6,19 @@ import matplotlib.pyplot as plt
 import plotly.express as px 
 import plotly.graph_objects as go
 from typing import Optional
-from src.metrics import calculate_sma, calculate_daily_returns, calculate_max_profit
+from metrics import calculate_sma, calculate_daily_returns, calculate_max_profit
 # from metrics import calculate_sma, calculate_daily_returns, calculate_max_profit  
 
 
-def plot_price_and_sma(stock_name, window_size):
-    df = calculate_sma(stock_name, window_size)
+def plot_price_and_sma(df, window_size):
+    df = calculate_sma(df, window_size)
     # Pick only needed columns
     cols = ['close'] + [f'sma_{w}' for w in window_size]
     df_plot = df[cols].reset_index()
 
     # Reshape into long format
     df_melt = df_plot.melt(id_vars="date", var_name="Series", value_name="Price")
-
+    stock_name = df['name'].iloc[0]  # get first stock name
     # Plot line chart
     fig = px.line(df_melt, x="date", y="Price", color="Series",
                   title=f"Stock Price with SMAs for {stock_name}")
