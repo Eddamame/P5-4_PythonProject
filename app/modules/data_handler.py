@@ -7,6 +7,14 @@ def data_handler(
         filterName: list[str] | None = None,
         filterTime: tuple[int, int] | None = None
     ) -> pd.DataFrame:
+    """
+    Data Handler receives CSV file and performs data cleaning and filtering
+    Parameters:
+        filepath (str): Path to CSV file
+        filterName (list[str]): Optional input, allows filtering by specific stock name
+        filterTime (tuple[int, int]): Optional input, allows filtering by specific time (start, end) in years
+    Output:
+    """
     # Parameters:
     #   filepath: path to CSV file
     #   filterName: List of Names to filter, e.g filterName = ['AAPL', 'AMZN', 'GOOG', 'MSFT']
