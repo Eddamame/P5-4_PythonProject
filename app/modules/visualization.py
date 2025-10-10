@@ -7,24 +7,54 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import Optional
 from .metrics import calculate_sma, calculate_daily_returns, calculate_max_profit 
-
+"""
+----- plot SMA using plotly ------------------
+Author: Si Yun
+input: df which is the calculated value of SMA and window_sizes is the period specify by the user
+step1: call the calculate_sma from metrics
+step2: create a plotly figure
+step3: plot the closing price of a stock
+step4: plot the SMA for the window size
+step5: Add title and axis label
+step6: Display the chart
+"""
+    
 
 # --- plot SMA using plotly ---
+def plot_price_and_sma(df, window_size):
+    df = calculate_sma(df, window_size)
+    
+    # Create Plotly figure
+    fig = go.Figure()
 
-def plot_price_and_sma(stock_name, window_size):
-    df = calculate_sma(stock_name, window_size)
-    # Pick only needed columns
-    cols = ['close'] + [f'sma_{w}' for w in window_size]
-    df_plot = df[cols].reset_index()
+    # Add the closing price line
+    fig.add_trace(go.Scatter(
+        x=df['date'], 
+        y=df['close'], 
+        mode='lines', 
+        name='Close Price'
+    ))
 
-    # Reshape into long format
-    df_melt = df_plot.melt(id_vars="date", var_name="Series", value_name="Price")
+    # Add each SMA line
+    for w in window_size:
+        fig.add_trace(go.Scatter(
+            x=df['date'], 
+            y=df[f'sma_{w}'], 
+            mode='lines', 
+            name=f'SMA {w}'
+        ))
 
-    # Plot line chart
-    fig = px.line(df_melt, x="date", y="Price", color="Series",
-                  title=f"Stock Price with SMAs for {stock_name}")
+    # Add chart title and labels
+    stock_name = df['name'].iloc[0] if 'name' in df.columns else "Stock"
+    fig.update_layout(
+        title=f"Stock Price with SMAs for {stock_name}",
+        xaxis_title="Date",
+        yaxis_title="Price",
+        template="plotly_white"
+    )
 
     fig.show()
+
 
 # --- plot runs using plotly ---
 
