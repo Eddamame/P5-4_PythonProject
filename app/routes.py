@@ -246,17 +246,10 @@ def results():
         # 4. Max Profit
         if 'max_profit' in selected_methods:
             try:
-                # Calculate max profit
-                profit_data = calculate_max_profit(clean_data)
-                
-                # Generate profit plot
-                plot_data = plot_max_profit_segments(clean_data, profit_data)
+                # Plot data and return max profit
+                plot_data = plot_max_profit_segments(clean_data)
                 analysis_results['plots']['max_profit'] = plot_data
                 
-                # Add profit metrics
-                analysis_results['metrics']['max_profit'] = profit_data['max_profit']
-                analysis_results['metrics']['buy_date'] = profit_data['buy_date']
-                analysis_results['metrics']['sell_date'] = profit_data['sell_date']
             except Exception as e:
                 analysis_results['plots']['max_profit'] = None
                 analysis_results['metrics']['max_profit_error'] = str(e)

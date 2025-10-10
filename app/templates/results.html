@@ -80,9 +80,6 @@
             <h2 class="chart-title">Maximum Profit</h2>
             {% if results.plots.max_profit %}
                 {{ results.plots.max_profit|safe }}
-                <p>Max Profit: {{ results.metrics.max_profit }}</p>
-                <p>Buy Date: {{ results.metrics.buy_date }}</p>
-                <p>Sell Date: {{ results.metrics.sell_date }}</p>
             {% else %}
                 <p class="error">Max Profit plot unavailable.</p>
             {% endif %}
