@@ -2,8 +2,8 @@
 
 from flask import Flask
 
-def create_app():
-    app = Flask(__name__)
+def create_app(config_object='config.Config'):
+    app = Flask(__name__, instance_relative_config = True)
 
     # ... app configuration (e.g., app.config, secret key) ...
     

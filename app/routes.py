@@ -19,7 +19,6 @@ from app.modules.metrics import (
 )
 
 app = Flask(__name__)
-app.secret_key = 'P5-4'  # Change this to a secure random key
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
