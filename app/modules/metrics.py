@@ -97,29 +97,39 @@ Steps:
 # --- SMA Analysis ---
 def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
     try:
-        
+        # --- Input validation ---
         if 'date' not in df.columns:
-            raise ValueError("'date' column not found in dataframe")
+            raise KeyError("'date' column not found in dataframe")
         if 'close' not in df.columns:
-            raise ValueError("'close' column not found in dataframe")
+            raise KeyError("'close' column not found in dataframe")
+        if df.empty:
+            raise ValueError("Input DataFrame is empty.")
         if not all(isinstance(n, int) and n > 0 for n in window_sizes):
-            raise ValueError("window_sizes must be a positive integers.")
+            raise ValueError("window_sizes must be positive integers.")
 
-        df = df.set_index('date')
+        # --- Step 1: Prepare data ---
+        df = df.copy().set_index('date')
         close_prices = df['close'].tolist()
-    
+
+        # --- Step 2: Sliding window SMA calculation ---
         for n in window_sizes:
-            if len(close_prices) < n:
-                df[f'sma_{n}'] = [None] * len(close_prices)
-                continue
+            sma = []
+            window = []
+            window_sum = 0.0
 
-            sma = [None] * (n - 1)
-            window_sum = sum(close_prices[:n])
-            sma.append(round(window_sum / n, 2))
+            for price in close_prices:
+                window.append(price)
+                window_sum += price
 
-            for i in range(n, len(close_prices)):
-                window_sum += close_prices[i] - close_prices[i - n]
-                sma.append(round(window_sum / n, 2))
+                # Keep window size fixed
+                if len(window) > n:
+                    window_sum -= window.pop(0)
+
+                # Only calculate SMA when window full
+                if len(window) == n:
+                    sma.append(round(window_sum / n, 2))
+                else:
+                    sma.append(None)
 
             df[f'sma_{n}'] = sma
 
