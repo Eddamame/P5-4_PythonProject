@@ -84,7 +84,7 @@ def handle_backup_csv(
     """
     
     # Define the relative path to the backup CSV file
-    backup_file_path = os.path.join('data', 'stock_data.csv')
+    backup_file_path = os.path.join('data', 'test_data.csv')
     print(f"DEBUG: Attempting to load and process backup data from: {backup_file_path}")
     
     try:
