@@ -59,6 +59,7 @@
                         <option value="">-- Select window size --</option>
                         <option value="20">20 days</option>
                         <option value="50">50 days</option>
+                        <option value="100">100 days</option>
                         <option value="200">200 days</option>
                     </select>
                 </label>
@@ -77,6 +78,15 @@
                     <i class="fa-solid fa-mountain-sun metric-icon"></i>
                     <h3 class="metric-title">Price Runs Analysis</h3>
                     <p class="metric-desc">Identify significant continuous up/down market movements.</p>
+                    <!-- ADDED RUN LENGTH DROPDOWN -->
+                    <select name="run_length" class="run-select">
+                        <option value="">-- Min run length --</option>
+                        <option value="3">3 days</option>
+                        <option value="4">4 days</option>
+                        <option value="5">5 days</option>
+                        <option value="6">6 days</option>
+                        <option value="7">7 days</option>
+                    </select>
                 </label>
 
                 <!-- Max Profit -->
@@ -84,7 +94,7 @@
                     <input type="checkbox" name="max_profit" value="1" class="metric-checkbox">
                     <i class="fa-solid fa-money-bill-trend-up metric-icon"></i>
                     <h3 class="metric-title">Maximum Profit</h3>
-                    <p class="metric-desc">Calculate the largest single profit possible in the period.</p>
+                    <p class="metric-desc">Calculate maximum profit through multiple buy/sell transactions (Valley–Peak).</p>
                 </label>
 
             </div>

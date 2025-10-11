@@ -26,7 +26,7 @@ from app.modules.metrics import (
     calculate_sma,
     calculate_daily_returns,
     calculate_max_profit,
-    calculate_runs
+    calculate_runs 
 )
 
 
@@ -55,10 +55,11 @@ def index():
 
         # Clear any previous analysis data
         session.pop('clean_data', None)
-        session.pop('data_cache_key', None)  # <-- FIX: Clear the cache key too
+        session.pop('data_cache_key', None)
         session.pop('selected_methods', None)
         session.pop('sma_window', None)
-        session.pop('prediction_window', None) # Ensure prediction window is cleared too
+        session.pop('prediction_window', None)
+        session.pop('run_length', None) # Clear run length setting
 
         return redirect(url_for('main.metrics'))
 
@@ -71,7 +72,6 @@ def metrics():
     """
     # Check if user has ticker/period in session
     if 'ticker' not in session or 'period' not in session:
-        # Debugging log removed here
         return redirect(url_for('main.index'))
 
     # Retrieve current ticker/period for rendering or data fetching
@@ -88,32 +88,44 @@ def metrics():
 
     # --- POST Request Handling (Data Fetching and Selection) ---
     if request.method == 'POST':
-        # Get selected analysis methods and perform form validation... (Omitted for brevity, assumed correct)
         
         selected_methods = []
         
-        # ... (rest of form validation logic for selected_methods and window sizes) ...
-        
+        # Predictive Model
         if request.form.get('predictive_model'):
             selected_methods.append('predictive_model')
             prediction_window = request.form.get('prediction_window')
             if not prediction_window:
                 return render_template('metrics.html', ticker=ticker, period=period, error="Please select a window size for Prediction before continuing.")
             session['prediction_window'] = int(prediction_window)
+        else:
+            session.pop('prediction_window', None)
 
+        # Simple Moving Average (SMA)
         if request.form.get('sma'):
             selected_methods.append('sma')
             sma_window = request.form.get('sma_window')
             if not sma_window:
                 return render_template('metrics.html', ticker=ticker, period=period, error="Please select a window size for SMA before continuing.")
             session['sma_window'] = sma_window
+        else:
+            session.pop('sma_window', None)
 
+        # Daily Returns
         if request.form.get('daily_returns'):
             selected_methods.append('daily_returns')
 
+        # Price Runs Analysis
         if request.form.get('runs'):
             selected_methods.append('runs')
+            run_length = request.form.get('run_length') # Get run_length
+            if not run_length: # Validate run_length
+                return render_template('metrics.html', ticker=ticker, period=period, error="Please select a minimum run length before continuing.")
+            session['run_length'] = int(run_length) # Store run_length for metrics display
+        else:
+            session.pop('run_length', None) # Clear if not selected
 
+        # Max Profit
         if request.form.get('max_profit'):
             selected_methods.append('max_profit')
 
@@ -122,8 +134,6 @@ def metrics():
         
         # --- Data Fetching Logic with Fallback ---
         try:
-            # We already defined ticker and period above
-            
             # Use the original ticker for the API fetch, even if it's currently '(BACKUP)' in the session
             current_ticker = ticker.replace(' (BACKUP)', '').strip()
             
@@ -180,7 +190,6 @@ def results():
     Results route: Generate analyses and display dashboard
     """
     # 1. Check for required keys and retrieve data from cache
-    # FIX: Check for the small cache key instead of the large DataFrame
     required_keys = ['ticker', 'period', 'data_cache_key', 'selected_methods']
     for key in required_keys:
         if key not in session:
@@ -192,7 +201,7 @@ def results():
         period = session['period']
         selected_methods = session['selected_methods']
 
-        # FIX: Retrieve DataFrame from the cache and remove the key from the session
+        # Retrieve DataFrame from the cache
         data_cache_key = session.pop('data_cache_key', None)
 
         if not data_cache_key:
@@ -292,11 +301,17 @@ def results():
         # 5. Runs Analysis
         if 'runs' in selected_methods:
             try:
+                # Retrieve the run length from session. Default to 4 days, matching the plot_runs default.
+                min_length_for_plot = session.get('run_length', 4)
+                
+                # calculate_runs remains unchanged (it calculates ALL runs)
                 runs_data = calculate_runs(clean_data)
                 runs_df = runs_data[0]
                 prices = runs_data[2]
 
-                fig = plot_runs(runs_df, prices)
+                # Pass the user-selected length to plot_runs for visual filtering/highlighting
+                fig = plot_runs(runs_df, prices, min_length=min_length_for_plot)
+                
                 if fig:
                     analysis_results['plots']['runs'] = pio.to_html(fig, full_html=False, include_plotlyjs='cdn')
                 else:
@@ -310,6 +325,10 @@ def results():
                     analysis_results['metrics']['total_runs'] = 0
                     analysis_results['metrics']['avg_run_length'] = 0.0
                     analysis_results['metrics']['longest_run'] = 0
+                
+                # Add the setting the user selected for display
+                analysis_results['metrics']['min_run_length_setting'] = min_length_for_plot
+
             except Exception as e:
                 current_app.logger.error(f"Runs analysis error: {e}")
                 analysis_results['plots']['runs'] = None
