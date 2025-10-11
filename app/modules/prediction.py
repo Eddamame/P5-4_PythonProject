@@ -78,30 +78,23 @@ def add_intercept(features):
 
 
 def calculate_coefficients(features, target):
-    """
-    Calculate regression coefficients using the Normal Equation method.
-    Formula: coefficients = ((x_transpose)*X)^-1 * (x_transpose)*y
-    Parameters:
-        features (np.array): The input features for training
-        target (np.array): The target for prediction
+    # Ensure inputs are NumPy arrays (important defensive programming)
+    X = np.array(features)
+    Y = np.array(target)
+    
+    # Check shape: X should be (n_samples, n_features), Y should be (n_samples,)
+    if X.ndim == 1:
+        X = X.reshape(-1, 1)
 
-    Returns:
-        coefficients (np.array): coefficients [b0, b1, b2, ...]
-
-    """
-    try:
-        # Add intercept column to the features matrix
-        features_with_intercept = add_intercept(features)
-        # Apply the Normal Equation: coefficients = ((x_transpose)*X)^-1 * (x_transpose)*y
-        x_transpose = features_with_intercept.T
-        coefficients = np.linalg.pinv(x_transpose @ features_with_intercept) @ x_transpose @ target
-        return coefficients
-    except np.linalg.LinAlgError as e:
-        print(f"Error in calculate_coefficients(): Error can happen due to perfect correlation in features. {e}")
-        raise
-    except Exception as e:
-        print(f"Error in calculate_coefficients(): Unexpected Error. {e}")
-        raise
+    model = LinearRegression()
+    # Scikit-learn handles all the heavy lifting using optimized NumPy operations
+    model.fit(X, Y) 
+    
+    # Combine coefficient and intercept for simplicity if needed, 
+    # but the simplest fix is ensuring you use the Scikit-learn fit/predict methods properly.
+    
+    # We will return the fitted model object itself to use its .predict() method later
+    return model
 
 def predict(features, coefficients):
     """
@@ -194,44 +187,52 @@ def validate_model(data, target_column, test_size=0.2):
 def forecast_prices(data, target_column, n_days: int):
     """
     Predicts future prices for a given number of days and plots the result.
-
-    Parameters:
-        data (pd.DataFrame): The historical data to train the model on.
-        target_column (str): The name of the column we want to predict.
-        n_days (int): The number of future days to predict.
-
-    Outputs:
-        Next n_days predictions: Shown in console
-        predicted_plot: Plot showing historical and predicted prices
+    
+    Returns:
+        str: The HTML div string for the Plotly chart, or None if an error occurs.
     """
     try:
-        # Ensure n_days is a positive integer
+        # Import Plotly utilities inside the function for clean execution
+        from plotly.offline import plot
+        import numpy as np
+
+        # --- VALIDATION ---
         if not isinstance(n_days, int) or n_days < 1:
             print("Error: Number of days for forecast must be a positive integer.")
-            return
+            return None
         
-        # Ensure the dataframe is not empty
         if data.empty:
             raise ValueError("Error: Input dataframe is empty.")
         
-        # Ensure required columns are present
-        required_cols = ['date', target_column]
+        # --- INPUT CONVERSION FIX ---
+        # The model requires 'date' and the features: 'open', 'high', 'low', 'volume'
+        feature_cols = ['open', 'high', 'low', 'volume']
+        required_cols = ['date', target_column] + feature_cols
+        
         if not all(col in data.columns for col in required_cols):
-            raise KeyError(f"Error: Dataframe must contain columns: {required_cols}")
+            missing_cols = [col for col in required_cols if col not in data.columns]
+            raise KeyError(f"Error: Dataframe must contain columns. Missing: {missing_cols}. Cannot run predictive model.")
         
         print(f"\n--- Predicting Next {n_days} Day(s) ---")
         
-        # Step 1: Train the model on the entie historical dataset
-        features = data.drop(columns=['date', target_column]).values
+        # Step 1: Prepare data for training
+        # Extract features (X) and target (Y) as NumPy arrays
+        features = data[feature_cols].values
         target = data[target_column].values
+        
+        # The 'calculate_coefficients' function must return a model object or coefficients 
+        # that work with NumPy arrays. Assuming it returns coefficients/model.
         coefficients = calculate_coefficients(features, target)
 
         # Step 2: Get the last row of real features to start the prediction loop
+        # Ensure the last features are a 2D array for the predict function
         last_known_features = features[-1].reshape(1, -1)
         average_volume = data['volume'].mean()
         last_date = data['date'].iloc[-1]
 
         # Step 3: Generate future dates for plotting
+        # Note: Added import for pd.Timedelta, assuming pandas is imported outside this function
+        import pandas as pd
         future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=n_days).to_pydatetime().tolist()
 
         # Step 4: Iteratively predict for n_days
@@ -239,26 +240,39 @@ def forecast_prices(data, target_column, n_days: int):
         current_features = last_known_features
 
         for day in range(n_days):
+            # next_prediction must be a single float/value
             next_prediction = predict(current_features, coefficients)[0]
             future_predictions.append(next_prediction)
             print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
 
             # Make previous day's close prediction into next day's features
+            # This creates the new features array for the next day's prediction
             next_features = np.array([[
-                next_prediction, #Open
-                next_prediction, #High
-                next_prediction, #Low
-                average_volume #Volume
+                next_prediction, # Open
+                next_prediction, # High
+                next_prediction, # Low
+                average_volume # Volume (estimated as mean)
             ]])
             current_features = next_features
 
         print("----------------------------------\n")
         
-        # Call the plotting function
-        predicted_plot(data, future_dates, future_predictions)
+        # Step 5: Generate and Return Plot HTML
+        fig = predicted_plot(data, future_dates, future_predictions)
+        
+        # Convert the Plotly figure to an HTML div string for Flask rendering
+        if fig:
+            fig_html_div = plot(fig, output_type='div', include_plotlyjs=False)
+            return fig_html_div
+        else:
+            return None
         
     except Exception as e:
+        # The error log showed 'can't multiply sequence by non-int of type 'float'' 
+        # which is a math error, likely from mixing NumPy and standard Python lists in `calculate_coefficients` or `predict`.
         print(f"An unexpected error occurred during forecasting: {e}")
+        return None
+
     
 """
 Notes
