@@ -84,7 +84,7 @@ def handle_backup_csv(
         backup_file_path = os.path.join(current_app.root_path, 'data', 'test_data.csv')
     except RuntimeError:
         # Fallback if current_app is not available (e.g., testing outside of app context)
-        backup_file_path = os.path.join('data', 'test_data.csv')
+        backup_file_path = os.path.join('data', 'backup_data.csv')
         
     current_app.logger.info(f"DEBUG: Attempting to load and process backup data from: {backup_file_path}")
     
