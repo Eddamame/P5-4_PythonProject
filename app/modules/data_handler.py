@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from typing import List, Tuple, Optional
-from flask import current_app # Import current_app for better path handling and logging
+from flask import current_app # Crucial for finding files relative to the app root
 
 # --- 1. Function for Cleaning Live API Data (Takes a DataFrame) ---
 def clean_api_data(
@@ -14,8 +14,8 @@ def clean_api_data(
     
     Parameters:
         df_raw (pd.DataFrame): Raw DataFrame from get_hist_data (yfinance).
-        ticker (str): The single ticker requested (used to add the 'name' column).
-        filterTime (tuple[int, int]): Optional input, allows filtering by specific time (start, end) in years.
+        ticker (str): The single ticker requested.
+        filterTime (tuple[int, int]): Optional input for time filtering.
         
     Output:
         pd.DataFrame: Cleaned, filtered, and standardized DataFrame.
@@ -32,23 +32,20 @@ def clean_api_data(
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     df.dropna(subset=['date'], inplace=True)
     
-    # 2. Add 'name' column (yfinance does not provide this column)
-    df['name'] = ticker.replace(' (BACKUP)', '').strip() # Strip (BACKUP) if present
+    # 2. Add 'name' column and strip any "(BACKUP)" tag
+    df['name'] = ticker.replace(' (BACKUP)', '').strip()
     df['name'] = df['name'].astype(str)
         
-    # 3. Remove Missing Values (before numeric conversion)
-    df.dropna(inplace=True)
-
-    # 4. Ensure correct data-types for numeric columns (Using coerce for robustness)
+    # 3. Ensure correct data-types for numeric columns (Use coerce for robustness)
     for col in ['open','close','high','low','volume']:
          if col in df.columns:
-             # FIX: Use errors='coerce' to turn bad strings into NaN, then drop the NaN
+             # Use coerce to turn bad strings (or weird floats) into NaN
              df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    # Drop rows that failed numeric conversion
-    df.dropna(subset=['open','close','high','low','volume'], inplace=True)
+    # 4. Remove rows with any missing values *after* conversion
+    df.dropna(subset=['date', 'close', 'volume'], inplace=True)
 
-    # 5. Filter by time (years) - this is redundant if yfinance was filtered, but safe.
+    # 5. Filter by time (years)
     if filterTime:
         start, end = filterTime
         df = df[(df['date'].dt.year >= start) & (df['date'].dt.year <= end)]
@@ -72,39 +69,41 @@ def clean_api_data(
 # --- 2. Function for Handling Backup CSV Data (Takes a file path and cleans it) ---
 def handle_backup_csv(
     ticker: str, 
-    period: str, # Period is not used for CSV filtering here, but we keep the signature for routes.py
+    period: str, # Period is not used for CSV filtering, but kept for function signature
     filterTime: Optional[Tuple[int, int]] = None
 ) -> pd.DataFrame:
     """
-    Handles the backup data path by reading the CSV from a fixed path and applying 
-    the full cleaning and filtering logic.
+    Loads, filters, and processes the historical backup data file (test_data.csv).
+    This function implements the necessary logic to handle the file path and filter 
+    by ticker, regardless of the "(BACKUP)" tag added in the session.
     """
     
     # Define the absolute path to the backup CSV file
-    # FIX: Use current_app.root_path to find the file correctly relative to the app root
     try:
+        # Standard approach for files at the root level: (APP_ROOT)/data/test_data.csv
         backup_file_path = os.path.join(current_app.root_path, 'data', 'test_data.csv')
     except RuntimeError:
         # Fallback if current_app is not available (e.g., testing outside of app context)
         backup_file_path = os.path.join('data', 'test_data.csv')
         
-    print(f"DEBUG: Attempting to load and process backup data from: {backup_file_path}")
+    current_app.logger.info(f"DEBUG: Attempting to load and process backup data from: {backup_file_path}")
     
     try:
         # Load data from the contingency CSV
         df = pd.read_csv(backup_file_path)
     except FileNotFoundError:
-        # Use flask flash/logger instead of print in a production app
-        raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}. Please ensure it exists in the 'data/' folder.")
+        current_app.logger.error(f"Backup file not found at: {backup_file_path}")
+        raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}.")
     except Exception as e:
+        current_app.logger.error(f"Error reading backup CSV file: {e}")
         raise Exception(f"Error reading backup CSV file: {e}")
 
     
     # Standardize column names to lowercase
     df.columns = [col.lower() for col in df.columns]
     
-    # FIX 1: Strip '(BACKUP)' from the ticker name for filtering, 
-    # as the CSV only contains 'AAPL' or 'MSFT'.
+    # FIX 1: Strip '(BACKUP)' from the ticker name for filtering
+    # This ensures we search for 'AAPL' even if the session ticker is 'AAPL (BACKUP)'
     clean_ticker = ticker.replace(' (BACKUP)', '').strip()
     
     # Filter specific Names
@@ -117,12 +116,9 @@ def handle_backup_csv(
     if df.empty:
         raise ValueError(f"No data found for ticker '{clean_ticker}' in backup file.")
 
-    # Remove Missing Values (Initial pass)
-    df.dropna(inplace=True)
-
     # Ensure correct data-types, using COERCE for robustness against odd price strings
     df['name'] = df['name'].astype(str)
-    # Date should be fine as 'date' column is YYYY-MM-DD
+    # Convert date, using coerce to turn bad values into NaT
     df['date'] = pd.to_datetime(df['date'], errors='coerce') 
     
     # FIX 2: Use errors='coerce' to handle bad numeric strings, then drop rows that failed.
@@ -149,24 +145,13 @@ def handle_backup_csv(
     return df[required_cols]
 
 
-# This alias is kept for the API route logic's use
-api_data_handler = clean_api_data
-
-
-# Re-implementing the original api_data_handler wrapper to use the new clean_api_data
+# This alias is necessary because routes.py calls this name for API data handling.
 def api_data_handler(
     y_data: pd.DataFrame, 
-    ticker: str, # Ticker must be passed to add the 'name' column
+    ticker: str, # Ticker is required to set the 'name' column
     filterTime: Optional[Tuple[int, int]] = None
 ) -> pd.DataFrame:
     """
-    Wrapper for clean_api_data used in routes.py
+    Wrapper for clean_api_data used in routes.py to standardize the output.
     """
-    # NOTE: Your routes.py passes the ticker to api_data_handler, but your 
-    # function definition was missing it. The correct implementation should look like this:
-    
-    # Check if 'ticker' is present in the arguments; if not, you'll need to update routes.py 
-    # to ensure the ticker is passed correctly to this function.
-    
-    # Assuming ticker is passed in routes.py, we call the standardized cleaner:
     return clean_api_data(y_data, ticker=ticker, filterTime=filterTime)
