@@ -1,7 +1,40 @@
 import pandas as pd
 import os
-from typing import List, Tuple, Optional
+import uuid
+from typing import List, Tuple, Optional, Dict
 from flask import current_app # Crucial for finding files relative to the app root
+
+# --- In-Memory Data Cache (Fix for Session Overflow) ---
+# Use a simple dictionary for process-level caching of large DataFrames.
+_data_cache: Dict[str, pd.DataFrame] = {}
+
+def store_clean_data(df: pd.DataFrame) -> str:
+    """
+    Stores a clean DataFrame in the in-memory cache and returns a unique key.
+    This replaces storing the entire DataFrame in the session.
+    """
+    cache_key = str(uuid.uuid4())
+    _data_cache[cache_key] = df
+    # Log for debugging purposes
+    try:
+        current_app.logger.info(f"Stored DataFrame in cache with key: {cache_key}. Current cache size: {len(_data_cache)}")
+    except RuntimeError:
+        pass # Ignore if not in application context
+    return cache_key
+
+def retrieve_clean_data(cache_key: str) -> Optional[pd.DataFrame]:
+    """
+    Retrieves a clean DataFrame from the cache and immediately removes it.
+    The data is removed upon retrieval to prevent cache bloat and reuse.
+    """
+    df = _data_cache.pop(cache_key, None)
+    # Log for debugging purposes
+    try:
+        current_app.logger.info(f"Retrieved and removed DataFrame for key: {cache_key}. Remaining cache size: {len(_data_cache)}")
+    except RuntimeError:
+        pass # Ignore if not in application context
+    return df
+
 
 # --- 1. Function for Cleaning Live API Data (Takes a DataFrame) ---
 def clean_api_data(
@@ -25,9 +58,13 @@ def clean_api_data(
     # 1. Standardize column names to lowercase
     df.columns = [col.lower() for col in df.columns]
 
-    # Ensure date column is named 'date' and set to datetime
+    # Ensure date column is named 'date' and set to datetime (Handles yfinance index/column variations)
     if 'date' not in df.columns and 'Date' in df_raw.columns:
         df = df.rename(columns={'Date': 'date'})
+    
+    # Check if the date is in the index (common for yfinance output)
+    if df.index.name and df.index.name.lower() in ('date', 'Date'):
+        df = df.reset_index(names=['date'])
         
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     df.dropna(subset=['date'], inplace=True)
@@ -74,15 +111,11 @@ def handle_backup_csv(
 ) -> pd.DataFrame:
     """
     Loads, filters, and processes the historical backup data file.
-    This function implements the necessary logic to handle the file path and filter 
-    by ticker, regardless of the "(BACKUP)" tag added in the session.
     """
     
     # Define the absolute path to the backup CSV file
     try:
-        # FIX: We use os.pardir ('..') to step up one directory from the Flask app's 
-        # mistaken root (/app/app/) to the actual project root (/app/), where the 
-        # 'data' folder is located according to your structure.
+        # Use os.pardir to step up one directory from the app's root to the project root
         backup_file_path = os.path.join(
             current_app.root_path, 
             os.pardir, 
@@ -93,16 +126,17 @@ def handle_backup_csv(
         # Fallback if current_app is not available (e.g., testing outside of app context)
         backup_file_path = os.path.join('data', 'backup_data.csv')
         
-    current_app.logger.info(f"DEBUG: Attempting to load and process backup data from: {backup_file_path}")
+    try:
+        current_app.logger.info(f"DEBUG: Attempting to load and process backup data from: {backup_file_path}")
+    except RuntimeError:
+        pass # Ignore if not in application context
     
     try:
         # Load data from the contingency CSV
         df = pd.read_csv(backup_file_path)
     except FileNotFoundError:
-        current_app.logger.error(f"Backup file not found at: {backup_file_path}")
         raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}. Please ensure it exists.")
     except Exception as e:
-        current_app.logger.error(f"Error reading backup CSV file: {e}")
         raise Exception(f"Error reading backup CSV file: {e}")
 
     
@@ -110,7 +144,6 @@ def handle_backup_csv(
     df.columns = [col.lower() for col in df.columns]
     
     # FIX 1: Strip '(BACKUP)' from the ticker name for filtering
-    # This ensures we search for 'AAPL' even if the session ticker is 'AAPL (BACKUP)'
     clean_ticker = ticker.replace(' (BACKUP)', '').strip()
     
     # Filter specific Names
@@ -128,7 +161,7 @@ def handle_backup_csv(
     # Convert date, using coerce to turn bad values into NaT
     df['date'] = pd.to_datetime(df['date'], errors='coerce') 
     
-    # FIX 2: Use errors='coerce' to handle bad numeric strings, then drop rows that failed.
+    # Use errors='coerce' to handle bad numeric strings, then drop rows that failed.
     for col in ['open','close','high','low','volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 

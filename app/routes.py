@@ -11,7 +11,8 @@ import plotly.io as pio
 main_bp = Blueprint('main', __name__)
 
 from app.modules.data_fetcher import get_hist_data
-from app.modules.data_handler import api_data_handler, handle_backup_csv
+# Import the new cache functions
+from app.modules.data_handler import api_data_handler, handle_backup_csv, store_clean_data, retrieve_clean_data
 
 from app.modules.prediction import forecast_prices
 from app.modules.visualization import (
@@ -54,6 +55,7 @@ def index():
 
         # Clear any previous analysis data
         session.pop('clean_data', None)
+        session.pop('data_cache_key', None)  # <-- FIX: Clear the cache key too
         session.pop('selected_methods', None)
         session.pop('sma_window', None)
         session.pop('prediction_window', None) # Ensure prediction window is cleared too
@@ -90,7 +92,6 @@ def metrics():
         selected_methods = []
         
         # ... (rest of form validation logic for selected_methods and window sizes) ...
-        # NOTE: I'm keeping the original validation logic as is, assuming it works.
         
         if request.form.get('predictive_model'):
             selected_methods.append('predictive_model')
@@ -123,7 +124,6 @@ def metrics():
             # We already defined ticker and period above
             
             # Use the original ticker for the API fetch, even if it's currently '(BACKUP)' in the session
-            # (The actual API fetch uses the ticker from the session at the start of the POST block)
             current_ticker = ticker.replace(' (BACKUP)', '').strip()
             
             try:
@@ -134,7 +134,7 @@ def metrics():
                     # Treat empty API response as a soft failure, forcing fallback
                     raise ValueError("API returned no data.")
 
-                # ✅ FIX CONFIRMED: Pass the ticker argument to ensure 'name' column is set.
+                # Clean the API data
                 clean_data = api_data_handler(raw_data, ticker=current_ticker)
 
             except Exception as api_e:
@@ -142,7 +142,6 @@ def metrics():
                 current_app.logger.error(f"API data fetch failed for {current_ticker}: {api_e}. Falling back to backup CSV handler.")
 
                 # Attempt 2: Load and Process Backup Data using the dedicated handler
-                # The handle_backup_csv function will strip '(BACKUP)' internally if needed
                 clean_data = handle_backup_csv(current_ticker, period)
 
                 # Update session to indicate backup use and notify user
@@ -153,8 +152,11 @@ def metrics():
             if clean_data is None or clean_data.empty:
                 raise ValueError("Both API fetch/clean and backup data processing failed.")
 
-            # Store clean data and selections in session
-            session['clean_data'] = clean_data.to_json(date_format='iso', orient='split')
+            # Store clean data using the in-memory cache and save the small key to the session
+            data_cache_key = store_clean_data(clean_data)
+            session['data_cache_key'] = data_cache_key
+            
+            # Store selections in session (small data is fine here)
             session['selected_methods'] = selected_methods
 
             return redirect(url_for('main.results'))
@@ -176,21 +178,31 @@ def results():
     """
     Results route: Generate analyses and display dashboard
     """
-    # ... (No changes needed here, existing code is fine) ...
-    required_keys = ['ticker', 'period', 'clean_data', 'selected_methods']
+    # 1. Check for required keys and retrieve data from cache
+    # FIX: Check for the small cache key instead of the large DataFrame
+    required_keys = ['ticker', 'period', 'data_cache_key', 'selected_methods']
     for key in required_keys:
         if key not in session:
             return redirect(url_for('main.index'))
 
     try:
-        # Retrieve data from session
+        # Retrieve small data from session
         ticker = session['ticker']
         period = session['period']
         selected_methods = session['selected_methods']
 
-        # Convert JSON back to DataFrame
-        # Ensure we read the date column correctly
-        clean_data = pd.read_json(session['clean_data'], orient='split')
+        # FIX: Retrieve DataFrame from the cache and remove the key from the session
+        data_cache_key = session.pop('data_cache_key', None)
+
+        if not data_cache_key:
+            raise ValueError("Analysis data key not found in session. Please restart analysis.")
+            
+        clean_data = retrieve_clean_data(data_cache_key)
+        
+        if clean_data is None or clean_data.empty:
+            raise ValueError("Analysis data not found in cache or is empty. Please restart the analysis.")
+
+        # Ensure the date column is correct (although data_handler should handle it)
         clean_data['date'] = pd.to_datetime(clean_data['date'])
 
         # Initialize results dictionary
@@ -202,11 +214,9 @@ def results():
         }
 
         # --- Run analyses and generate plots ---
-        # ... (all calculation and plotting logic is fine as long as clean_data is a good DataFrame) ...
         
         # 1. Predictive Model (Forecasting)
         if 'predictive_model' in selected_methods:
-             # ... (logic for prediction is fine) ...
             try:
                 window_size = session.get('prediction_window', 10)
                 forecast_data = forecast_prices(clean_data, 'close', window_size)
@@ -224,7 +234,6 @@ def results():
 
         # 2. SMA (Simple Moving Average)
         if 'sma' in selected_methods:
-            # ... (logic for SMA is fine) ...
             try:
                 sma_input = session.get('sma_window', '20')
                 if isinstance(sma_input, str):
@@ -247,7 +256,6 @@ def results():
 
         # 3. Daily Returns
         if 'daily_returns' in selected_methods:
-            # ... (logic for Daily Returns is fine) ...
             try:
                 returns_data = calculate_daily_returns(clean_data)
                 fig = plot_daily_returns_plotly(returns_data, ticker)
@@ -267,7 +275,6 @@ def results():
 
         # 4. Max Profit
         if 'max_profit' in selected_methods:
-            # ... (logic for Max Profit is fine) ...
             try:
                 fig = plot_max_profit_segments(clean_data, ticker)
                 if fig:
@@ -283,7 +290,6 @@ def results():
 
         # 5. Runs Analysis
         if 'runs' in selected_methods:
-            # ... (logic for Runs Analysis is fine) ...
             try:
                 runs_data = calculate_runs(clean_data)
                 runs_df = runs_data[0]
