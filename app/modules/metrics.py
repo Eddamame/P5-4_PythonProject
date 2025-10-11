@@ -204,7 +204,11 @@ def calculate_max_profit(data):
  
 
 def calculate_runs(data):
-
+    """ analyzes time-series data to identify and 
+    quantify runs—consecutive days of upward or downward price movement. 
+    
+    returns a summary DataFrame detailing each run's start date, end date, 
+    length, and direction for chronological momentum tracking."""
     try:
         #pre-validation 
         if 'date' not in data.columns or 'close' not in data.columns:

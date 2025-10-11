@@ -13,7 +13,7 @@ import json
     # Stop retrying after 5 attempts.
     stop=stop_after_attempt(5),
     
-    # Retry on network errors, JSON parsing errors, and general exceptions (for YFTzMissingError).
+    # Retry on network errors, JSON parsing errors, and general exceptions
     retry=retry_if_exception_type((
         requests.exceptions.HTTPError, 
         requests.exceptions.ConnectionError, 
@@ -46,11 +46,9 @@ def get_hist_data(ticker: str, period: str):
     end_date = today
     
     try:
-        # --- DEBUGGING STEP ---
         print(f"DEBUG: Attempting fetch for {ticker} from {start_date} to {end_date}")
         
         # --- 2. Data Fetching ---
-        # FINAL FIX: Pass the ticker as a list to prevent internal yfinance multi-ticker confusion
         stock_df = yf.download(
             [ticker],  # <-- CRITICAL CHANGE: Pass ticker as a list
             start=start_date, 
