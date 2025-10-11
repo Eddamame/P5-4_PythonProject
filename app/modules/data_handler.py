@@ -37,7 +37,7 @@ def retrieve_clean_data(cache_key: str) -> Optional[pd.DataFrame]:
 
 
 # --- 1. Function for Cleaning Live API Data (Takes a DataFrame) ---
-def clean_api_data(
+def api_data_handler(
     df_raw: pd.DataFrame, 
     ticker: str, 
     filterTime: Optional[Tuple[int, int]] = None
@@ -185,13 +185,13 @@ def handle_backup_csv(
     return df[required_cols]
 
 
-# This alias is necessary because routes.py calls this name for API data handling.
-def api_data_handler(
-    y_data: pd.DataFrame, 
-    ticker: str, # Ticker is required to set the 'name' column
-    filterTime: Optional[Tuple[int, int]] = None
-) -> pd.DataFrame:
-    """
-    Wrapper for clean_api_data used in routes.py to standardize the output.
-    """
-    return clean_api_data(y_data, ticker=ticker, filterTime=filterTime)
+# # This alias is necessary because routes.py calls this name for API data handling.
+# def api_data_handler(
+#     y_data: pd.DataFrame, 
+#     ticker: str, # Ticker is required to set the 'name' column
+#     filterTime: Optional[Tuple[int, int]] = None
+# ) -> pd.DataFrame:
+#     """
+#     Wrapper for clean_api_data used in routes.py to standardize the output.
+#     """
+#     return clean_api_data(y_data, ticker=ticker, filterTime=filterTime)
