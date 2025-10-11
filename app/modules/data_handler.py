@@ -73,15 +73,22 @@ def handle_backup_csv(
     filterTime: Optional[Tuple[int, int]] = None
 ) -> pd.DataFrame:
     """
-    Loads, filters, and processes the historical backup data file (test_data.csv).
+    Loads, filters, and processes the historical backup data file.
     This function implements the necessary logic to handle the file path and filter 
     by ticker, regardless of the "(BACKUP)" tag added in the session.
     """
     
     # Define the absolute path to the backup CSV file
     try:
-        # Standard approach for files at the root level: (APP_ROOT)/data/test_data.csv
-        backup_file_path = os.path.join(current_app.root_path, 'data', 'backup_data.csv')
+        # FIX: We use os.pardir ('..') to step up one directory from the Flask app's 
+        # mistaken root (/app/app/) to the actual project root (/app/), where the 
+        # 'data' folder is located according to your structure.
+        backup_file_path = os.path.join(
+            current_app.root_path, 
+            os.pardir, 
+            'data', 
+            'backup_data.csv'
+        )
     except RuntimeError:
         # Fallback if current_app is not available (e.g., testing outside of app context)
         backup_file_path = os.path.join('data', 'backup_data.csv')
@@ -93,7 +100,7 @@ def handle_backup_csv(
         df = pd.read_csv(backup_file_path)
     except FileNotFoundError:
         current_app.logger.error(f"Backup file not found at: {backup_file_path}")
-        raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}.")
+        raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}. Please ensure it exists.")
     except Exception as e:
         current_app.logger.error(f"Error reading backup CSV file: {e}")
         raise Exception(f"Error reading backup CSV file: {e}")
