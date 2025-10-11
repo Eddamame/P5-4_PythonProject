@@ -137,7 +137,7 @@ def calculate_sma(df: pd.DataFrame, window_sizes: int | list[int]) -> pd.DataFra
 
             df[f'sma_{n}'] = sma
 
-        return df.reset_index()
+        return df
 
     except (KeyError, ValueError, TypeError) as e:
         print(f"Input Error: {e}")
