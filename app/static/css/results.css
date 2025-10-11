@@ -1,84 +1,49 @@
-/* Layout grid for dashboard */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 24px;
-    margin: 30px auto;
-    max-width: 1200px;
-    padding: 0 20px;
+/* Style for the container holding the navigation buttons */
+.navigation-controls {
+    /* Assuming you are using a grid, this makes it span the whole top row */
+    grid-column: 1 / -1; 
+    display: flex;
+    justify-content: center; /* Center the buttons horizontally */
+    gap: 20px; /* Space between the buttons */
+    margin: 20px 0; /* Vertical spacing around the buttons */
 }
 
-/* Dashboard title */
-.dashboard-title {
-    grid-column: 1 / -1;
-    font-size: 1.8rem;
+/* Basic button/link styling (adjust based on your existing btn classes) */
+.btn {
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
     font-weight: bold;
-    margin-bottom: 10px;
-    text-align: center;
-    color: #222;
+    transition: background-color 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* Space between icon and text */
 }
 
-/* Chart card styling */
-.chart-card {
-    background: #fff;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.chart-card:hover {
-    border-color: #007bff;
-    box-shadow: 0 5px 12px rgba(0,0,0,0.1);
-}
-
-/* Chart title */
-.chart-title {
-    font-size: 1.3rem;
-    font-weight: bold;
-    margin-bottom: 12px;
+/* Style for the "Change Metrics" button */
+.btn-secondary {
+    background-color: #f0f0f0; /* Light/neutral color */
     color: #333;
+    border: 1px solid #ccc;
+}
+.btn-secondary:hover {
+    background-color: #e0e0e0;
 }
 
-/* Subheader (e.g., prediction text) */
-.subheader {
-    font-size: 1rem;
-    font-weight: 500;
-    margin-bottom: 15px;
-    color: #007bff;
+/* Style for the "New Ticker" button */
+.btn-primary {
+    background-color: #007bff; /* Primary/accent color */
+    color: white;
+    border: 1px solid #007bff;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
 }
 
-/* Error messages inside cards */
-.error {
-    color: #842029;
-    background-color: #f8d7da;
-    border: 1px solid #f5c2c7;
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    margin-top: 10px;
-}
-
-/* Card sizing helpers */
-.large-chart {
-    grid-column: 1 / -1; /* full width */
-}
-
-.full-width {
+/* Separator line for better visual flow */
+.nav-separator {
     grid-column: 1 / -1;
-}
-
-.half-width {
-    grid-column: span 1;
-}
-
-/* Responsive tweaks */
-@media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-    .half-width {
-        grid-column: 1 / -1;
-    }
+    border: none;
+    border-top: 1px solid #eee;
+    margin-bottom: 20px;
 }
