@@ -330,7 +330,6 @@ def predicted_plot(historical_data, forecast_dates, forecast_values):
     # Safely determine the stock name. Assuming 'Historical Data' as a safe default.
     # If a 'name' column existed, we would use it, but since it doesn't usually exist 
     # in the financial data DataFrame, we use a generic placeholder.
-    stock_name = "Stock Price" 
 
     # 1. Add the historical data line 
     fig.add_trace(go.Scatter(
@@ -390,7 +389,7 @@ def predicted_plot(historical_data, forecast_dates, forecast_values):
 
     # 4. Update layout for clarity
     fig.update_layout(
-        title=f'{stock_name} Price: Historical Data and Future Forecast',
+        title=f'Historical Data and Future Forecast',
         xaxis_title='Date',
         yaxis_title='Close Price ($)',
         template='plotly_white',
