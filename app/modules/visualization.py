@@ -7,84 +7,65 @@ from typing import Optional
 from .metrics import calculate_sma, calculate_daily_returns, calculate_max_profit 
 
 # --- plot SMA using plotly ---
-def plot_price_and_sma(df: pd.DataFrame, window_size: list[int] | int):
+def plot_price_and_sma(df, window_size):
     """
     Creates a Plotly figure showing Close Price and Simple Moving Averages (SMAs).
     
     Parameters:
-        df (pd.DataFrame): DataFrame containing stock data.
-        window_size (list[int] or int): A list of window sizes (e.g., [20, 50]) or a single integer.
+        df (pd.DataFrame): DataFrame containing stock data, potentially with SMA columns.
+        window_size (int or list[int]): Single window size or list of window sizes for SMA calculation.
 
     Returns:
-        plotly.graph_objects.Figure or None: The generated Plotly figure object, or None on error.
+        plotly.graph_objects.Figure: The generated Plotly figure object.
     """
     try:
-        # 1. Standardize window_size to be a list of integers
+        # --- Handle both int and list inputs ---
         if isinstance(window_size, int):
-            window_sizes_list = [window_size]
-        elif isinstance(window_size, str):
-             # Handle comma-separated string from Flask form if it wasn't pre-processed
-            window_sizes_list = [int(w.strip()) for w in window_size.split(',') if w.strip().isdigit()]
+            window_sizes = [window_size]
+        elif isinstance(window_size, list):
+            if not all(isinstance(w, int) and w > 0 for w in window_size):
+                raise ValueError("All window sizes must be positive integers.")
+            window_sizes = window_size
         else:
-            # Assume it's already a list/iterable
-            window_sizes_list = window_size
-            
-        # 2. Check if SMAs are already calculated for all required windows. 
-        # If not, calculate them all at once using the efficient calculate_sma from metrics.
-        missing_sma = [w for w in window_sizes_list if f'sma_{w}' not in df.columns]
-        
-        if missing_sma:
-             # df is updated with all required SMA columns (the original data is returned 
-             # plus the new SMA columns, ready for plotting)
-            df = calculate_sma(df, missing_sma)
-        
-        # 3. Create Plotly figure
+            raise TypeError("window_size must be an int or a list of ints.")
+
+        # --- Ensure SMA columns exist ---
+        for w in window_sizes:
+            sma_col = f'sma_{w}'
+            if sma_col not in df.columns:
+                df = calculate_sma(df, w)
+
+        # --- Create Plotly figure ---
         fig = go.Figure()
 
-        # Add the closing price line
+        # Add closing price line
         fig.add_trace(go.Scatter(
-            x=df['date'], 
-            y=df['close'], 
-            mode='lines', 
-            name='Close Price',
-            line=dict(color='#374151', width=3)
+            x=df['date'],
+            y=df['close'],
+            mode='lines',
+            name='Close Price'
         ))
 
-        # Define a consistent color palette for SMAs
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
-        
         # Add each SMA line
-        for i, w in enumerate(window_sizes_list):
-            sma_column = f'sma_{w}'
-            if sma_column in df.columns:
-                color = colors[i % len(colors)]
-                fig.add_trace(go.Scatter(
-                    x=df['date'], 
-                    y=df[sma_column], 
-                    mode='lines', 
-                    name=f'SMA {w}',
-                    line=dict(color=color, width=1.5, dash='solid')
-                ))
+        for w in window_sizes:
+            fig.add_trace(go.Scatter(
+                x=df['date'],
+                y=df[f'sma_{w}'],
+                mode='lines',
+                name=f'SMA {w}'
+            ))
 
-        # Add chart title and labels
-        stock_name = df['Name'].iloc[0] if 'Name' in df.columns and 'Name' in df and not df['Name'].empty else "Stock"
-        
-        # Use window sizes in the title
-        title_windows = ", ".join(map(str, window_sizes_list))
-
+        # --- Chart layout ---
+        stock_name = df['name'].iloc[0] if 'name' in df.columns and not df['name'].empty else "Stock"
         fig.update_layout(
-            title={
-                'text': f"Stock Price with SMAs ({title_windows} Days) for {stock_name}",
-                'x': 0.5,
-                'xanchor': 'center'
-            },
+            title=f"Stock Price with SMAs for {stock_name}",
             xaxis_title="Date",
-            yaxis_title="Close Price",
-            template="plotly_white",
-            hovermode="x unified"
+            yaxis_title="Price",
+            template="plotly_white"
         )
-        
+
         return fig
+
     except Exception as e:
         print(f"Error generating SMA plot: {e}")
         return None
