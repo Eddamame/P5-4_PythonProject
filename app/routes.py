@@ -71,10 +71,7 @@ def metrics():
     """
     # Check if user has ticker/period in session
     if 'ticker' not in session or 'period' not in session:
-        # LOGGING ADDED: Check why we are redirecting
-        current_app.logger.warning(
-            f"Redirecting to index. Ticker present: {'ticker' in session}, Period present: {'period' in session}. Session keys: {list(session.keys())}"
-        )
+        # Debugging log removed here
         return redirect(url_for('main.index'))
 
     # Retrieve current ticker/period for rendering or data fetching
