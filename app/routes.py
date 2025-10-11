@@ -228,17 +228,22 @@ def results():
         # 1. Predictive Model (Forecasting)
         if 'predictive_model' in selected_methods:
             try:
-                window_size = session.get('prediction_window', 10)
-                forecast_data = forecast_prices(clean_data, 'close', window_size)
-                if forecast_data:
-                    forecast_dates, forecast_values = forecast_data
-                    fig = predicted_plot(clean_data, forecast_dates, forecast_values)
-                    analysis_results['plots']['prediction'] = pio.to_html(fig, full_html=False, include_plotlyjs='cdn')
+                # Get the number of days to forecast from the session, defaulting to 10
+                window_size = session.get('prediction_window', 10) 
+                
+                # forecast_prices now returns the plot HTML string directly, or None
+                prediction_plot_html = forecast_prices(clean_data, 'close', window_size)
+                
+                if prediction_plot_html:
+                    # Store the raw HTML string (it's already prepared by forecast_prices)
+                    analysis_results['plots']['prediction'] = prediction_plot_html
                 else:
+                    # If None, the template will display 'Prediction plot unavailable.'
                     analysis_results['plots']['prediction'] = None
             except Exception as e:
                 current_app.logger.error(f"Prediction model error: {e}")
                 analysis_results['plots']['prediction'] = None
+                # Keep the error message for debugging purposes
                 analysis_results['metrics']['prediction_error'] = str(e)
 
 
