@@ -18,18 +18,15 @@
     </header>
 
     <main>
-        <!-- Main Container Card -->
         <div class="card">
             <header class="text-center">
                 <h1 class="title">Market Analyzer</h1>
                 <p class="subtitle">Enter a stock ticker and analysis time period.</p>
             </header>
 
-            <!-- Analysis Input Form -->
             <form method="POST" action="/" id="analysis-form" class="space-y-6">
                 <div class="input-group">
 
-                    <!-- Stock Ticker Input -->
                     <div class="input-field">
                         <label for="ticker">Stock Ticker (e.g., AAPL, GOOGL)</label>
                         <input 
@@ -42,7 +39,6 @@
                         >
                     </div>
 
-                    <!-- Time Period Selector -->
                     <div class="input-field">
                         <label for="time-period">Time Period</label>
                         <select 
@@ -52,21 +48,19 @@
                             required
                         >
                             <option value="">-- Select Period --</option>
-                            <option value="12mo">1 Year</option>
-                            <option value="24mo">2 Years</option>
-                            <option value="36mo">3 Years</option>
+                            <option value="1y">1 Year</option>
+                            <option value="2y">2 Years</option>
+                            <option value="3y">3 Years</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Error Message Placeholder -->
                 {% if error %}
                 <div class="alert alert-danger">
                     {{ error }}
                 </div>
                 {% endif %}
 
-                <!-- Analysis Button -->
                 <div class="form-actions text-center">
                     <button type="submit" class="btn-analysis">Analyse</button>
                 </div>
