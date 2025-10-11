@@ -314,10 +314,23 @@ def validation_table(test_dates, actual_prices, predicted_prices):
 
 def predicted_plot(historical_data, forecast_dates, forecast_values):
     """
-    Plots historical values and predicted values together.
+    Generates a Plotly figure object plotting the historical stock prices 
+    and the future forecast trend.
+
+    Parameters:
+        historical_data (pd.DataFrame): The DataFrame containing the 'date' and 'close' history.
+        forecast_dates (list): List of future dates for the forecast.
+        forecast_values (list): List of predicted price values corresponding to forecast_dates.
+
+    Returns:
+        go.Figure: The complete Plotly figure object ready for HTML conversion.
     """
     fig = go.Figure()
-    stock_name = historical_data.get('name', "Stock")
+    
+    # Safely determine the stock name. Assuming 'Historical Data' as a safe default.
+    # If a 'name' column existed, we would use it, but since it doesn't usually exist 
+    # in the financial data DataFrame, we use a generic placeholder.
+    stock_name = "Stock Price" 
 
     # 1. Add the historical data line 
     fig.add_trace(go.Scatter(
@@ -391,5 +404,4 @@ def predicted_plot(historical_data, forecast_dates, forecast_values):
         height=600
     )
 
-    # NOTE: Removed fig.show() - returning the figure is mandatory for Flask embedding.
     return fig

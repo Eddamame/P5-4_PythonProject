@@ -2,7 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+# Import the LinearRegression class from Scikit-learn
+from sklearn.linear_model import LinearRegression 
+from plotly.offline import plot # Import plot here for global use
 from app.modules.visualization import predicted_plot
+
+
 """
 The goal of this module is to implement a multiple linear regression model
 to predict stock prices based on the features in the dataset.
@@ -12,162 +17,91 @@ Target(y) = [Close]
 
 Predicted Close Price = b0 + b1*Open + b2*High + b3*Low + b4*Volume
 
-To ensure that the model is accurate, we must split this process into two main parts: Validation and Forecasting
-
 ----------------------------------------------------------------------------------------------------------------
 VALIDATION - Our goal in validation is to get an evaluation of how accurate our model is
-
-Step 1: Prepare the data
-    - Extract features (x) and target (y) from the DataFrame
-
-Step 2: Split the data
-    - Split the dataset into training (80%) and testing (20%) sets
-    - train_x, train_y for training (80%)
-    - test_x, test_y for testing (20%)
-
-Step 3: Train the Model (Find Coefficients)
-    - Use train_x and train_y to calculate the coefficients (b0, b1, b2, b3, b4) using Normal Equation method
-
-Step 4: Validate the Model
-    - Make predictions based on test_x and test_y
-    - Calculate evaluation metrics (MSE, R²)
-         - Mean Squared Error (MSE): Measures how wrong the predictions are. e.g Actual Close = 150, Predicted Close = 145, Error = 5, MSE = 25. 
-                                     Lower is better (min 0.0)
-         - R-Squared (R²): Describes the % of data the model can explain. 0.6 = Explains 60% of the data, 40% unexplained
-                           Higher is better (max 1.0)
-
-Step 5: Plot Actual vs. Predicted Values
-    - Visualize the performance of the model by plotting actual vs. predicted stock prices
+(Steps 1-5 described previously)
 
 ----------------------------------------------------------------------------------------------------------------
 FORECASTING - Our goal in forecasting is to predict the next day's stock price / future stock prices
-
-Step 1: Prepare the data
-    - Extract features (X) and target (y) from the DataFrame
-
-Step 2: Train the Model (Find Coefficients)
-    - Use the entire dataset (X and y) to calculate the coefficients (b0, b1, b2, b3, b4) using Normal Equation method
-
-Step 3: Predict the Next Day's Value
-    - Use the most recent data point (last row of X) to predict the next day's stock price
-
+(Steps 1-3 described previously)
 """
 
-def add_intercept(features):
-    """
-    Add an intercept column (a column of ones) to the feature matrix.
-    This is necessary for calculating the intercept term (b0) in the regression.
-
-    Parameters:
-        features (np.array): The input features for training
-
-    Returns:
-        features_with_intercept (np.array): The feature matrix with an added intercept column.
-
-    """
-    try:
-        # Intercept is needed for b0, to ensure the matrix has the correct dimensions
-        # Prediction = b0*intercept + b1*x1 + b2*x2 + ...
-        intercept = np.ones((features.shape[0], 1))
-        # Add intercept column to the features matrix with np.hstack
-        features_with_intercept = np.hstack((intercept, features))
-        return features_with_intercept
-    except Exception as e:
-        print(f"Error in add_intercept(): Error adding intercept column. {e}")
-        raise
+# --- REMOVING MANUAL MATRIX FUNCTIONS: add_intercept and predict are removed ---
 
 
 def calculate_coefficients(features, target):
-    # Ensure inputs are NumPy arrays (important defensive programming)
-    X = np.array(features)
-    Y = np.array(target)
-    
-    # Check shape: X should be (n_samples, n_features), Y should be (n_samples,)
-    if X.ndim == 1:
-        X = X.reshape(-1, 1)
-
-    model = LinearRegression()
-    # Scikit-learn handles all the heavy lifting using optimized NumPy operations
-    model.fit(X, Y) 
-    
-    # Combine coefficient and intercept for simplicity if needed, 
-    # but the simplest fix is ensuring you use the Scikit-learn fit/predict methods properly.
-    
-    # We will return the fitted model object itself to use its .predict() method later
-    return model
-
-def predict(features, coefficients):
     """
-    Predict values given a feature matrix and fitted coefficients.
+    Trains and returns a fitted Scikit-learn Linear Regression model.
+    This function replaces the need for manual Normal Equation calculation.
+
     Parameters:
-        features (np.array): The input features for prediction.
-        coefficients (np.array): The fitted coefficients from the model.
+        features (np.array): The input features (X).
+        target (np.array): The target values (Y).
 
     Returns:
-        predictions (np.array): The predicted values
-
+        LinearRegression: The fitted Scikit-learn model object.
     """
     try:
-        # Add intercept column to the features matrix
-        features_with_intercept = add_intercept(features)
-        # Ensure same number of features and coefficients
-        if features_with_intercept.shape[1] != coefficients.shape[0]:
-            raise ValueError(f"Error in predict(): Feature and coefficient dimensions do not match. Feature: {features_with_intercept.shape[1]}, Coefficients: {len(coefficients)}")
+        # Ensure inputs are NumPy arrays (important defensive programming)
+        X = np.array(features)
+        Y = np.array(target)
+        
+        # Check shape: X should be (n_samples, n_features)
+        if X.ndim == 1:
+            X = X.reshape(-1, 1)
 
-        # Make predictions: predictions = X * coefficients
-        predictions = features_with_intercept @ coefficients
-        return predictions
-    except ValueError as e:
-        print(f"Error in predict(). Different number of features and coefficients. {e}")
+        model = LinearRegression()
+        # Scikit-learn handles all the heavy lifting using optimized NumPy operations
+        model.fit(X, Y) 
+        
+        # Return the fitted model object itself
+        return model
     except Exception as e:
-        print(f"Error in predict(). Unexpected Error. {e}")
+        print(f"Error in calculate_coefficients: {e}")
+        # Re-raising the error here allows the calling function (forecast_prices) to catch it
+        raise
+
 
 def validate_model(data, target_column, test_size=0.2):
     """
     Splits data, trains the model, and evaluates its performance on unseen data.
-    Parameters:
-        data (pd.DataFrame): The input dataframe containing features and target
-        target_column (str): The name of the target column in the dataframe
-        test_size (float): Proportion of the dataset to include in the test split (default is 0.2)
-
+    
     Returns:
         date_test (pd.Series): test set dates for plotting
         target_test (np.array): Actual target values from test set
         predictions_on_test_data (np.array): Predicted target values for test set
-
     """
     print("--- Starting Model Validation ---")
     try:
-        # Ensure the dataframe is not empty
+        # Data and column validation remains the same
         if data.empty:
             raise ValueError("Error: Input dataframe is empty.")
         
-        # Ensure required columns are present
-        required_cols = ['date', target_column]
+        required_cols = ['date', target_column, 'open', 'high', 'low', 'volume']
         if not all(col in data.columns for col in required_cols):
-            raise KeyError(f"Error: Dataframe must contain columns: {required_cols}")
+            missing_cols = [col for col in required_cols if col not in data.columns]
+            raise KeyError(f"Error: Dataframe must contain columns. Missing: {missing_cols}")
         
-        # Step 1: Prepare features and target from the dataframe
-        # Features are the inputs (e.g., Open, High, Low, Volume)
-        # Target is the output we want to predict (e.g., Close)
+        # Step 1: Prepare features and target
         dates = data['date']
-        features = data.drop(columns=['date', target_column]).values
+        # IMPORTANT: Use explicit feature selection
+        feature_cols = ['open', 'high', 'low', 'volume']
+        features = data[feature_cols].values
         target = data[target_column].values
 
-        # Step 2: Split the data into training and testing sets. Date is also splitted for plotting later
-        # random_state=123 to ensure data is split the same way every time
+        # Step 2: Split the data
         features_train, features_test, target_train, target_test, date_train, date_test = train_test_split(
             features, target, dates, test_size=test_size, random_state=123
         )
         print(f"Data split into {len(features_train)} training samples and {len(features_test)} testing samples.")
 
-        # Step 3: Train the model by calculating coefficients using only training data(features_train and target_train).
-        coefficients = calculate_coefficients(features_train, target_train)
+        # Step 3: Train the model
+        model = calculate_coefficients(features_train, target_train) # Returns the fitted model object
 
-        # Step 4: Make predictions on the test data.
-        predictions_on_test_data = predict(features_test, coefficients)
+        # Step 4: Make predictions on the test data using the model's .predict() method
+        predictions_on_test_data = model.predict(features_test)
 
-        # Step 5: Evaluate the model by comparing predictions to the actual values.
+        # Step 5: Evaluate the model
         mse = mean_squared_error(target_test, predictions_on_test_data)
         r2 = r2_score(target_test, predictions_on_test_data)
         
@@ -176,13 +110,15 @@ def validate_model(data, target_column, test_size=0.2):
         print(f"R-Squared (R²): {r2:.3f}")
         print("------------------------------\n")
 
-        # Return values needed for plotting
         return date_test, target_test, predictions_on_test_data
     
     except (ValueError, KeyError) as e:
         print(f"Error in validate_model(): {e}")
+        return None, None, None
     except Exception as e:
         print(f"Error in validate_model(): Unexpected Error. {e}")
+        return None, None, None
+
 
 def forecast_prices(data, target_column, n_days: int):
     """
@@ -192,10 +128,6 @@ def forecast_prices(data, target_column, n_days: int):
         str: The HTML div string for the Plotly chart, or None if an error occurs.
     """
     try:
-        # Import Plotly utilities inside the function for clean execution
-        from plotly.offline import plot
-        import numpy as np
-
         # --- VALIDATION ---
         if not isinstance(n_days, int) or n_days < 1:
             print("Error: Number of days for forecast must be a positive integer.")
@@ -204,8 +136,7 @@ def forecast_prices(data, target_column, n_days: int):
         if data.empty:
             raise ValueError("Error: Input dataframe is empty.")
         
-        # --- INPUT CONVERSION FIX ---
-        # The model requires 'date' and the features: 'open', 'high', 'low', 'volume'
+        # --- INPUT PREPARATION ---
         feature_cols = ['open', 'high', 'low', 'volume']
         required_cols = ['date', target_column] + feature_cols
         
@@ -215,42 +146,39 @@ def forecast_prices(data, target_column, n_days: int):
         
         print(f"\n--- Predicting Next {n_days} Day(s) ---")
         
-        # Step 1: Prepare data for training
-        # Extract features (X) and target (Y) as NumPy arrays
+        # Step 1: Prepare data and train the model on the entire dataset
         features = data[feature_cols].values
         target = data[target_column].values
         
-        # The 'calculate_coefficients' function must return a model object or coefficients 
-        # that work with NumPy arrays. Assuming it returns coefficients/model.
-        coefficients = calculate_coefficients(features, target)
+        # 'model' is the fitted Scikit-learn LinearRegression object
+        model = calculate_coefficients(features, target) 
 
         # Step 2: Get the last row of real features to start the prediction loop
-        # Ensure the last features are a 2D array for the predict function
-        last_known_features = features[-1].reshape(1, -1)
+        last_known_features = features[-1].reshape(1, -1) # 2D array (1 sample, 4 features)
         average_volume = data['volume'].mean()
         last_date = data['date'].iloc[-1]
 
-        # Step 3: Generate future dates for plotting
-        # Note: Added import for pd.Timedelta, assuming pandas is imported outside this function
-        import pandas as pd
+        # Step 3: Generate future dates
         future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=n_days).to_pydatetime().tolist()
 
-        # Step 4: Iteratively predict for n_days
+        # Step 4: Iteratively predict for n_days using the model's .predict() method
         future_predictions = []
         current_features = last_known_features
 
         for day in range(n_days):
-            # next_prediction must be a single float/value
-            next_prediction = predict(current_features, coefficients)[0]
+            # Use the fitted model object to predict. 
+            # .predict() takes a 2D array and returns a 1D array, so we take [0]
+            next_prediction = model.predict(current_features)[0] 
+            
             future_predictions.append(next_prediction)
             print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
 
             # Make previous day's close prediction into next day's features
             # This creates the new features array for the next day's prediction
             next_features = np.array([[
-                next_prediction, # Open
-                next_prediction, # High
-                next_prediction, # Low
+                next_prediction, # Open (using last prediction)
+                next_prediction, # High (using last prediction)
+                next_prediction, # Low (using last prediction)
                 average_volume # Volume (estimated as mean)
             ]])
             current_features = next_features
@@ -260,18 +188,16 @@ def forecast_prices(data, target_column, n_days: int):
         # Step 5: Generate and Return Plot HTML
         fig = predicted_plot(data, future_dates, future_predictions)
         
-        # Convert the Plotly figure to an HTML div string for Flask rendering
         if fig:
-            fig_html_div = plot(fig, output_type='div', include_plotlyjs=False)
+            fig_html_div = plot(fig, output_type='div', include_plotlyjs='cdn') # Use 'cdn' for simplicity
             return fig_html_div
         else:
             return None
         
     except Exception as e:
-        # The error log showed 'can't multiply sequence by non-int of type 'float'' 
-        # which is a math error, likely from mixing NumPy and standard Python lists in `calculate_coefficients` or `predict`.
         print(f"An unexpected error occurred during forecasting: {e}")
         return None
+
 
     
 """
