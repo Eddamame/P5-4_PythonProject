@@ -21,11 +21,20 @@ parameter:
 return:
     dataframe of the calculated SMA 
 step 1. Validate inputs
+    Check that 'date' and 'close' columns exist in the DataFrame.
+    Verify that each window size is a positive integer.
 step 2. Prepare the data
+    Set 'date' as the index.
+    Retrieve the 'close' prices and convert them into a list for easier calculation.
 step 3. Perform SMA calculation
+    For each window size, compute the average closing price using the sliding window approach.
+    The first n-1 entries will be None since there's not enough data to calculate SMA.
 step 4. Store results
+    Save the computed SMA values into a new column (e.g., sma_20, sma_50) in the DataFrame.
 step 5. Return output
-step 6. Error handling
+    Return the updated DataFrame containing all SMA columns.
+step 6.Error handling
+    Use the except block to catch and print input or unexpected errors without crashing the program.
 
 ----- Daily Returns ------------------
 Author: Xue E
@@ -102,10 +111,11 @@ def calculate_sma(df: pd.DataFrame, window_sizes: int | list[int]) -> pd.DataFra
         else:
             raise TypeError("window_sizes must be an int or a list of ints.")
 
-       
+        # --- Step 1: Prepare data ---
         df = df.copy().set_index('date')
         close_prices = df['close'].tolist()
 
+        # --- Step 2: Sliding window SMA calculation ---
         for n in window_sizes:
             sma = []
             window = []
@@ -115,9 +125,11 @@ def calculate_sma(df: pd.DataFrame, window_sizes: int | list[int]) -> pd.DataFra
                 window.append(price)
                 window_sum += price
 
+                # Keep window size fixed
                 if len(window) > n:
                     window_sum -= window.pop(0)
 
+                # Only calculate SMA when window full
                 if len(window) == n:
                     sma.append(round(window_sum / n, 2))
                 else:
@@ -194,11 +206,7 @@ def calculate_max_profit(data):
  
 
 def calculate_runs(data):
-    """ analyzes time-series data to identify and 
-    quantify runs—consecutive days of upward or downward price movement. 
-    
-    returns a summary DataFrame detailing each run's start date, end date, 
-    length, and direction for chronological momentum tracking."""
+
     try:
         #pre-validation 
         if 'date' not in data.columns or 'close' not in data.columns:
