@@ -92,7 +92,22 @@ Steps:
 """
 
 # --- SMA Analysis ---
-def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
+def calculate_sma(df: pd.DataFrame, window_sizes: list[int] | int) -> pd.DataFrame:
+    """
+    Calculates the Simple Moving Average (SMA) for one or more window sizes 
+    and adds the results as new columns to the DataFrame.
+
+    This returned DataFrame contains all necessary data ('date', 'close', 'sma_N') 
+    for direct use in the plotting function.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame containing 'date' and 'close' prices.
+        window_sizes (list[int] | int): A single window size or a list of window sizes (positive integers).
+
+    Returns:
+        pd.DataFrame: A new DataFrame containing the original columns plus 
+                      the new SMA columns (e.g., 'sma_20').
+    """
     try:
         # --- Input validation ---
         if 'date' not in df.columns:
@@ -101,41 +116,32 @@ def calculate_sma(df: pd.DataFrame, window_sizes: list[int]) -> pd.DataFrame:
             raise KeyError("'close' column not found in dataframe")
         if df.empty:
             raise ValueError("Input DataFrame is empty.")
+
+        # Ensure window_sizes is a list, even if a single int was passed
+        if isinstance(window_sizes, int):
+            window_sizes = [window_sizes]
+            
         if not all(isinstance(n, int) and n > 0 for n in window_sizes):
             raise ValueError("window_sizes must be positive integers.")
 
         # --- Step 1: Prepare data ---
-        df = df.copy().set_index('date')
-        close_prices = df['close'].tolist()
-
-        # --- Step 2: Sliding window SMA calculation ---
+        # Work on a copy and set the index for rolling calculations
+        df_copy = df.copy().set_index('date')
+        
+        # --- Step 2: Pandas rolling window SMA calculation (More efficient than manual loop) ---
         for n in window_sizes:
-            sma = []
-            window = []
-            window_sum = 0.0
+            # Use built-in pandas rolling mean for efficiency
+            df_copy[f'sma_{n}'] = df_copy['close'].rolling(window=n).mean().round(2)
 
-            for price in close_prices:
-                window.append(price)
-                window_sum += price
-
-                # Keep window size fixed
-                if len(window) > n:
-                    window_sum -= window.pop(0)
-
-                # Only calculate SMA when window full
-                if len(window) == n:
-                    sma.append(round(window_sum / n, 2))
-                else:
-                    sma.append(None)
-
-            df[f'sma_{n}'] = sma
-
-        return df
+        # Reset index back to column before returning
+        return df_copy.reset_index()
 
     except (KeyError, ValueError) as e:
         print(f"Input Error: {e}")
+        return df.copy() # Return original data if error occurs
     except Exception as e:
-        print(f"Unexpected Error: {e}")
+        print(f"Unexpected Error in calculate_sma: {e}")
+        return df.copy()
 
 # --- Daily Returns --- 
 def calculate_daily_returns(data):

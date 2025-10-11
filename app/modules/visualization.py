@@ -7,27 +7,38 @@ from typing import Optional
 from .metrics import calculate_sma, calculate_daily_returns, calculate_max_profit 
 
 # --- plot SMA using plotly ---
-def plot_price_and_sma(df, window_size):
+def plot_price_and_sma(df: pd.DataFrame, window_size: list[int] | int):
     """
     Creates a Plotly figure showing Close Price and Simple Moving Averages (SMAs).
     
     Parameters:
-        df (pd.DataFrame): DataFrame containing stock data, potentially with SMA columns.
-        window_size (list or int): List of window sizes used for SMA calculation.
+        df (pd.DataFrame): DataFrame containing stock data.
+        window_size (list[int] or int): A list of window sizes (e.g., [20, 50]) or a single integer.
 
     Returns:
-        plotly.graph_objects.Figure: The generated Plotly figure object.
+        plotly.graph_objects.Figure or None: The generated Plotly figure object, or None on error.
     """
     try:
-        # Ensure df has SMA columns calculated (if not, calculate them)
+        # 1. Standardize window_size to be a list of integers
         if isinstance(window_size, int):
-             window_size = [window_size]
+            window_sizes_list = [window_size]
+        elif isinstance(window_size, str):
+             # Handle comma-separated string from Flask form if it wasn't pre-processed
+            window_sizes_list = [int(w.strip()) for w in window_size.split(',') if w.strip().isdigit()]
+        else:
+            # Assume it's already a list/iterable
+            window_sizes_list = window_size
+            
+        # 2. Check if SMAs are already calculated for all required windows. 
+        # If not, calculate them all at once using the efficient calculate_sma from metrics.
+        missing_sma = [w for w in window_sizes_list if f'sma_{w}' not in df.columns]
         
-        for w in window_size:
-            if f'sma_{w}' not in df.columns:
-                 df = calculate_sma(df, w)
-
-        # Create Plotly figure
+        if missing_sma:
+             # df is updated with all required SMA columns (the original data is returned 
+             # plus the new SMA columns, ready for plotting)
+            df = calculate_sma(df, missing_sma)
+        
+        # 3. Create Plotly figure
         fig = go.Figure()
 
         # Add the closing price line
@@ -35,28 +46,44 @@ def plot_price_and_sma(df, window_size):
             x=df['date'], 
             y=df['close'], 
             mode='lines', 
-            name='Close Price'
+            name='Close Price',
+            line=dict(color='#374151', width=3)
         ))
 
+        # Define a consistent color palette for SMAs
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+        
         # Add each SMA line
-        for w in window_size:
-            fig.add_trace(go.Scatter(
-                x=df['date'], 
-                y=df[f'sma_{w}'], 
-                mode='lines', 
-                name=f'SMA {w}'
-            ))
+        for i, w in enumerate(window_sizes_list):
+            sma_column = f'sma_{w}'
+            if sma_column in df.columns:
+                color = colors[i % len(colors)]
+                fig.add_trace(go.Scatter(
+                    x=df['date'], 
+                    y=df[sma_column], 
+                    mode='lines', 
+                    name=f'SMA {w}',
+                    line=dict(color=color, width=1.5, dash='solid')
+                ))
 
         # Add chart title and labels
-        stock_name = df['name'].iloc[0] if 'name' in df.columns and not df['name'].empty else "Stock"
+        stock_name = df['Name'].iloc[0] if 'Name' in df.columns and 'Name' in df and not df['Name'].empty else "Stock"
+        
+        # Use window sizes in the title
+        title_windows = ", ".join(map(str, window_sizes_list))
+
         fig.update_layout(
-            title=f"Stock Price with SMAs for {stock_name}",
+            title={
+                'text': f"Stock Price with SMAs ({title_windows} Days) for {stock_name}",
+                'x': 0.5,
+                'xanchor': 'center'
+            },
             xaxis_title="Date",
-            yaxis_title="Price",
-            template="plotly_white"
+            yaxis_title="Close Price",
+            template="plotly_white",
+            hovermode="x unified"
         )
         
-        # NOTE: Removed fig.show() - returning the figure is mandatory for Flask embedding.
         return fig
     except Exception as e:
         print(f"Error generating SMA plot: {e}")
