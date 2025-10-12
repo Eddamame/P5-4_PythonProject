@@ -1,63 +1,54 @@
-/* --- Main Dashboard Grid Layout --- */
 .dashboard-grid {
     display: grid;
-    /* Define 3 columns for a flexible layout:
-       - 1st column: takes 1 fraction of available space
-       - 2nd column: takes 1 fraction of available space
-       - 3rd column: takes 1 fraction of available space
-       You can adjust these values (e.g., 2fr 1fr 1fr for a wider first column)
-       based on how wide you want each panel.
-    */
-    grid-template-columns: 1fr 1fr 1fr; 
-    gap: 20px; /* Space between grid items (your chart cards) */
-    max-width: 1200px; /* Limit overall width for better readability */
-    margin: 20px auto; /* Center the grid on the page with vertical margin */
-    padding: 0 20px; /* Add some padding on the sides */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 15px; 
+    max-width: 1400px; 
+    margin: 20px auto; 
+    padding: 0 20px;
 }
 
-/* --- Chart Card Sizing within the Grid --- */
+.dashboard-title,
+.navigation-controls,
+.nav-separator {
+    grid-column: 1 / -1; 
+}
 
-/* Default chart card styling */
 .chart-card {
-    background-color: #ffffff; /* Example: light background for cards */
-    border: 1px solid #e0e0e0; /* Subtle border */
-    border-radius: 8px; /* Slightly rounded corners */
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Soft shadow */
-    display: flex; /* Use flexbox for content inside card */
-    flex-direction: column; /* Stack title and plot vertically */
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0; 
+    border-radius: 8px; 
+    padding: 15px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    display: flex; 
+    flex-direction: column;
 }
 
 .chart-title {
-    font-size: 1.3em;
+    font-size: 1.1em; 
     color: #333;
     margin-top: 0;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #f0f0f0; /* Light separator under title */
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 8px;
 }
-
 
 .chart-card > div { 
-    flex-grow: 1; /* Allow plot to take up remaining vertical space */
+    flex-grow: 1; 
+    min-height: 150px; 
 }
 
-
-
-/* Charts that should span all columns */
 .chart-card.full-width {
-    grid-column: 1 / -1; /* Spans from the first column line to the last */
+    grid-column: span 4; 
 }
 
-/* Large chart (e.g., Predictive Model) should span 2 columns */
 .chart-card.large-chart {
-    grid-column: span 2; /* Spans two of the defined columns */
+    grid-column: span 3; 
 }
 
-/* Half-width charts will naturally take up one column (1fr) each.
-*/
+.chart-card.half-width {
+    grid-column: span 1; 
+}
 
-/* If you want the metric paragraphs to be within the card, not affecting the plot layout */
 .chart-card p {
     font-size: 0.9em;
     color: #555;
@@ -65,17 +56,16 @@
     line-height: 1.4;
 }
 
-/* --- Navigation Controls (adjusting for current desired layout) --- */
 .navigation-controls {
-    grid-column: 1 / -1; /* Keep it spanning full width at the top */
+    grid-column: 1 / -1; 
     display: flex;
-    justify-content: flex-end; /* Align buttons to the right, similar to Image 2 */
-    gap: 15px; /* Slightly tighter gap */
+    justify-content: flex-end; 
+    gap: 15px; 
     margin-bottom: 20px;
 }
 
 .dashboard-title {
-    grid-column: 1 / -1; /* Title also spans full width */
+    grid-column: 1 / -1; 
     text-align: left;
     margin-bottom: 15px;
     font-size: 2.2em;
@@ -83,7 +73,7 @@
 }
 
 .nav-separator {
-    grid-column: 1 / -1; /* Separator spans full width */
+    grid-column: 1 / -1; 
     border: none;
     border-top: 1px solid #eee;
     margin-bottom: 25px;
