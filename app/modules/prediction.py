@@ -26,8 +26,6 @@ FORECASTING - Our goal in forecasting is to predict the next day's stock price /
 (Steps 1-3 described previously)
 """
 
-# --- REMOVING MANUAL MATRIX FUNCTIONS: add_intercept and predict are removed ---
-
 
 def calculate_coefficients(features, target):
     """
@@ -127,7 +125,13 @@ def forecast_prices(data, target_column, n_days: int):
     Returns:
         str: The HTML div string for the Plotly chart, or None if an error occurs.
     """
+    # NOTE: The 'predicted_plot' is already imported globally, so we remove the redundant inner import.
+    
     try:
+        # Ensure the date column is a datetime object to allow Timedelta addition (from previous fix)
+        data['date'] = pd.to_datetime(data['date'], errors='coerce')
+        data.dropna(subset=['date'], inplace=True)
+
         # --- VALIDATION ---
         if not isinstance(n_days, int) or n_days < 1:
             print("Error: Number of days for forecast must be a positive integer.")
@@ -167,8 +171,8 @@ def forecast_prices(data, target_column, n_days: int):
 
         for day in range(n_days):
             # Use the fitted model object to predict. 
-            # .predict() takes a 2D array and returns a 1D array, so we take [0]
-            next_prediction = model.predict(current_features)[0] 
+            # FIX: Use [0][0] to correctly extract the scalar value from the 2D array prediction result.
+            next_prediction = model.predict(current_features)[0][0] 
             
             future_predictions.append(next_prediction)
             print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
