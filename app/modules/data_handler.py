@@ -4,7 +4,7 @@ import uuid
 from typing import Optional, Dict, Tuple
 from flask import current_app
 from datetime import datetime, date
-# Removed unused imports: dateutil.relativedelta, relativedelta 
+
 
 # --- In-Memory Data Cache (Fix for Session Overflow) ---
 _data_cache: Dict[str, pd.DataFrame] = {}
@@ -32,10 +32,8 @@ def retrieve_clean_data(cache_key: str) -> Optional[pd.DataFrame]:
         pass
     return df
 
-# --- Removed: _get_start_date_from_period is now integrated into handle_backup_csv for reliability. ---
 
-
-# --- 1. Function for Cleaning Live API Data (Simplified) ---
+# --- 1. Function for Cleaning Live API Data ---
 
 def api_data_handler(
     df_raw: pd.DataFrame, 
@@ -70,7 +68,7 @@ def api_data_handler(
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    # 4. Remove rows with any missing values *after* conversion
+    # 4. Remove rows with any missing values after conversion
     df.dropna(subset=['date', 'close', 'volume'], inplace=True)
 
     # 5. Ensure 2 decimal points for $
@@ -88,12 +86,12 @@ def api_data_handler(
     return df[required_cols]
 
 
-# --- 2. Function for Handling Backup CSV Data (Now filters by period) ---
+# --- 2. Function for Handling Backup CSV Data ( filters by period) ---
 
 def handle_backup_csv(
     ticker: str, 
-    period: str, # <-- This parameter is used for filtering
-    filterTime: Optional[Tuple[int, int]] = None # Kept for signature but ignored
+    period: str, 
+    filterTime: Optional[Tuple[int, int]] = None 
 ) -> pd.DataFrame:
     """
     Loads, filters, and processes the historical backup data file, filtering
@@ -117,7 +115,7 @@ def handle_backup_csv(
         pass
     
     try:
-        # --- CRITICAL FIX: Load the CSV and parse the 'date' column immediately ---
+        
         df = pd.read_csv(
             backup_file_path,
             # Tell Pandas to parse 'date' as a datetime object
@@ -148,7 +146,6 @@ def handle_backup_csv(
     # Convert data types
     df['name'] = df['name'].astype(str)
     
-    # --- FIX: Explicitly convert 'date' column to datetime again for robustness ---
     # The 'unsupported operand type(s) for -: 'str' and 'DateOffset'' error
     # means latest_date (df['date'].max()) is a string/object, not a datetime.
     df['date'] = pd.to_datetime(df['date'], errors='coerce') 
@@ -165,7 +162,6 @@ def handle_backup_csv(
     if df.empty:
         raise ValueError(f"Ticker '{clean_ticker}' found in backup, but all rows were dropped due to bad date/numeric values.")
 
-    # --- Robust Filtering by Period using Pandas DateOffset ---
     # We use a nested try/except to specifically target issues in date filtering
     try:
         # 1. Determine the period in years (default to 5 years if period is invalid/missing)
