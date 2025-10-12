@@ -148,8 +148,15 @@ def handle_backup_csv(
     # Convert data types
     df['name'] = df['name'].astype(str)
     
+    # --- FIX: Explicitly convert 'date' column to datetime again for robustness ---
+    # The 'unsupported operand type(s) for -: 'str' and 'DateOffset'' error
+    # means latest_date (df['date'].max()) is a string/object, not a datetime.
+    df['date'] = pd.to_datetime(df['date'], errors='coerce') 
+    # --- END FIX ---
+
     for col in ['open','close','high','low','volume']:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Drop any rows where date or crucial numeric columns failed conversion
     df.dropna(subset=['date', 'close', 'volume'], inplace=True)

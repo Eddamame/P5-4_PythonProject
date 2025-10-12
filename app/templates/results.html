@@ -2,103 +2,49 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Results Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/css_reset.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/css_reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
-    <header>
-        <img id="logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
-        <hr>
-    </header>
+    <header>
+        <img id="logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        <hr>
+    </header>
 
-    <main class="main-content">         <h1 class="dashboard-title">
-            Results for {{ results.ticker }} ({{ results.period }})
-        </h1>
+    <main class="dashboard-grid">
+        <h1 class="dashboard-title">
+            Results for {{ results.ticker }} ({{ results.period }})
+        </h1>
 
-        <div class="navigation-controls">
-            <a href="{{ url_for('main.metrics') }}" class="btn btn-secondary">
-                <i class="fas fa-edit"></i> Change Analysis Metrics
-            </a>
+        <div class="navigation-controls">
+            <a href="{{ url_for('main.metrics') }}" class="btn btn-secondary">
+                <i class="fas fa-edit"></i> Change Analysis Metrics
+            </a>
 
-            <a href="{{ url_for('main.reset') }}" class="btn btn-primary">
-                <i class="fas fa-search"></i> Inspect New Ticker
-            </a>
-        </div>
-        <hr class="nav-separator">
+            <a href="{{ url_for('main.reset') }}" class="btn btn-primary">
+                <i class="fas fa-search"></i> Inspect New Ticker
+            </a>
+        </div>
+        <hr class="nav-separator">
+        {% if 'predictive_model' in selected_methods %}
+        <div class="chart-card large-chart">
+            <h2 class="chart-title">Predictive Model</h2>
+            {% if results.plots.prediction %}
+                {{ results.plots.prediction|safe }}
+            {% else %}
+                <p class="error">Prediction plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
 
-        <div class="chart-grid">             {% if 'predictive_model' in selected_methods %}
-            <div class="chart-card large-chart">
-                <h2 class="chart-title">Predictive Model</h2>
-                {% if results.plots.prediction %}
-                    {{ results.plots.prediction|safe }}
-                {% else %}
-                    <p class="error">Prediction plot unavailable.</p>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            {% if 'sma' in selected_methods %}
-            <div class="chart-card half-width">
-                <h2 class="chart-title">Simple Moving Average ({{ results.metrics.sma_window }} days)</h2>
-                {% if results.plots.sma %}
-                    {{ results.plots.sma|safe }}
-                {% else %}
-                    <p class="error">SMA plot unavailable.</p>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            {% if 'daily_returns' in selected_methods %}
-            <div class="chart-card half-width">
-                <h2 class="chart-title">Daily Returns</h2>
-                {% if results.plots.daily_returns %}
-                    {{ results.plots.daily_returns|safe }}
-                    <p>Average Daily Return: {{ results.metrics.avg_daily_return }}</p>
-                    <p>Volatility: {{ results.metrics.return_volatility }}</p>
-                {% else %}
-                    <p class="error">Daily Returns plot unavailable.</p>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            {% if 'max_profit' in selected_methods %}
-            <div class="chart-card full-width">
-                <h2 class="chart-title">Maximum Profit</h2>
-                {% if results.plots.max_profit %}
-                    {{ results.plots.max_profit|safe }}
-                {% else %}
-                    <p class="error">Max Profit plot unavailable.</p>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            {% if 'runs' in selected_methods %}
-            <div class="chart-card full-width">
-                <h2 class="chart-title">Market Price Runs</h2>
-                {% if results.plots.runs %}
-                    {{ results.plots.runs|safe }}
-                    <p>Total Runs: {{ results.metrics.total_runs }}</p>
-                    <p>Average Run Length: {{ results.metrics.avg_run_length }}</p>
-                    <p>Longest Run: {{ results.metrics.longest_run }}</p>
-                {% else %}
-                    <p class="error">Runs plot unavailable.</p>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>     </main>
-
-    <footer>
-        <hr>
-        &copy; Stock Analysis. All rights reserved.
-    </footer>
-</body>
-</html>
+        {% if 'sma' in selected_methods %}
+        <div class="chart-card half-
