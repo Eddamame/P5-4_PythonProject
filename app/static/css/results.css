@@ -37,16 +37,20 @@
     min-height: 150px; 
 }
 
+/* FIX: All main charts are now 100% width (span 4) */
 .chart-card.full-width {
     grid-column: span 4; 
 }
 
+/* FIX: Predictive Model (large-chart) is now 100% width (span 4) */
 .chart-card.large-chart {
-    grid-column: span 3; 
+    grid-column: span 4; 
 }
 
+/* FIX: Half-width charts (SMA, Daily Returns) are now 50% width (span 2) 
+        This allows them to sit perfectly side-by-side (2 + 2 = 4) */
 .chart-card.half-width {
-    grid-column: span 1; 
+    grid-column: span 2; 
 }
 
 .chart-card p {
