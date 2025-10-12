@@ -106,8 +106,30 @@ def calculate_coefficients(features, target):
         print(f"Error in calculate_coefficients(): Unexpected Error. {e}")
         raise
 
+def predict(features, coefficients):
+    """
+    Predict values given a feature matrix and fitted coefficients.
+    Parameters:
+        features (np.array): The input features for prediction.
+        coefficients (np.array): The fitted coefficients from the model.
 
+    Returns:
+        predictions (np.array): The predicted values
+    """
+    try:
+        # Add intercept column to the features matrix
+        features_with_intercept = add_intercept(features)
+        # Ensure same number of features and coefficients
+        if features_with_intercept.shape[1] != coefficients.shape[0]:
+            raise ValueError(f"Error in predict(): Feature and coefficient dimensions do not match. Feature: {features_with_intercept.shape[1]}, Coefficients: {len(coefficients)}")
 
+        # Make predictions: predictions = X * coefficients
+        predictions = features_with_intercept @ coefficients
+        return predictions
+    except ValueError as e:
+        print(f"Error in predict(). Different number of features and coefficients. {e}")
+    except Exception as e:
+        print(f"Error in predict(). Unexpected Error. {e}")
 
 def validate_model(data, target_column, test_size=0.2):
     """
@@ -215,7 +237,7 @@ def forecast_prices(data, target_column, n_days: int):
         target = data[target_column].values
         
         # 'model' is the fitted Scikit-learn LinearRegression object
-        model = calculate_coefficients(features, target) 
+        coefficients = calculate_coefficients(features, target) 
 
         # Step 2: Get the last row of real features to start the prediction loop
         last_known_features = features[-1].reshape(1, -1) # 2D array (1 sample, 4 features)
@@ -233,7 +255,7 @@ def forecast_prices(data, target_column, n_days: int):
             # Use the fitted model object to predict. 
             # FIX: Reverting the prediction indexing to [0]. Since the model was trained with 1D target 
             # data, predict returns a 1D array of shape (1,). Indexing it once [0] gives the scalar value.
-            next_prediction = model.predict(current_features)[0] 
+            next_prediction = predict(current_features, coefficients)[0] 
             
             future_predictions.append(next_prediction)
             print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
