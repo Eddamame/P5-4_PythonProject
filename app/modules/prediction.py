@@ -284,38 +284,3 @@ def forecast_prices(data, target_column, n_days: int):
     except Exception as e:
         print(f"An unexpected error occurred during forecasting: {e}")
         return None
-
-
-    
-"""
-Notes
-
-add_intercept(features)
-    - Calculates intercept column for features matrix
-    - Uses features (independent variables)
-
-calculate_coefficients(features, target)
-    - Calculates regression coefficients using Normal Equation method
-    - Uses features (independent variables) and target (dependent variable)
-
-predict(features, coefficients)
-    - Makes predictions using features and coefficients
-    - Uses features (independent variables) and coefficients (model parameters)
-    - Interdependent functions
-        - add_intercept(features)
-        - calculate_coefficients(features, target)
-
-validate_model(data, target_column, test_size=0.2)
-    - Splits data into train/test, then uses previous functions to calculate predicted values
-    - Interdependent functions
-        - add_intercept(features)
-        - calculate_coefficients(features, target)
-        - predict(features, coefficients)
-
-forecast_prices(data, target_column)
-    - Predicts future prices for 'n' days
-    - Interdependent functions
-        - add_intercept(features)
-        - calculate_coefficients(features, target)
-        - predict(features, coefficients)s
-"""
