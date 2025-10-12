@@ -1,49 +1,102 @@
-/* Style for the container holding the navigation buttons */
+.dashboard-grid {
+    display: grid;
+    /* 4 columns is correct */
+    grid-template-columns: repeat(4, 1fr); 
+    /* Tighter gap between cards for compactness */
+    gap: 10px; 
+    max-width: 1400px; 
+    margin: 20px auto; 
+    padding: 0 20px;
+}
+
+.dashboard-title,
+.navigation-controls,
+.nav-separator {
+    grid-column: 1 / -1; 
+}
+
+.chart-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0; 
+    border-radius: 8px; 
+    /* Reduced padding for compactness */
+    padding: 10px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    display: flex; 
+    flex-direction: column;
+    
+    /* Reduced min-height to allow more charts on screen */
+    min-height: 280px; 
+}
+
+.chart-title {
+    /* Slightly smaller title font */
+    font-size: 1em; 
+    color: #333;
+    margin-top: 0;
+    /* Reduced bottom margin */
+    margin-bottom: 5px; 
+    border-bottom: 1px solid #f0f0f0;
+    /* Reduced title padding */
+    padding-bottom: 5px; 
+}
+
+.chart-card > div { 
+    flex-grow: 1; 
+    /* Reduced min-height for the plot area itself */
+    min-height: 200px; 
+}
+
+/* 1. Full-width charts (Max Profit, Runs) */
+.chart-card.full-width {
+    grid-column: span 4; 
+}
+
+/* 2. Large chart (Predictive Model) is 75% width, allowing one chart beside it */
+.chart-card.large-chart {
+    grid-column: span 3; 
+    /* Main chart gets slightly more height */
+    min-height: 400px; 
+}
+
+/* 3. Half-width charts (SMA, Daily Returns) are 25% width */
+.chart-card.half-width {
+    grid-column: span 1; 
+}
+
+/* Optional: Targets the third chart card (Daily Returns) if you want it wider */
+.chart-card:nth-of-type(6) { 
+    grid-column: span 2; /* Making Daily Returns 50% width */
+}
+
+/* --- Remaining Styles --- */
+
+.chart-card p {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 5px; /* Reduced margin */
+    line-height: 1.4;
+}
+
 .navigation-controls {
-    /* Assuming you are using a grid, this makes it span the whole top row */
     grid-column: 1 / -1; 
     display: flex;
-    justify-content: center; /* Center the buttons horizontally */
-    gap: 20px; /* Space between the buttons */
-    margin: 20px 0; /* Vertical spacing around the buttons */
+    justify-content: flex-end; 
+    gap: 15px; 
+    margin-bottom: 20px;
 }
 
-/* Basic button/link styling (adjust based on your existing btn classes) */
-.btn {
-    text-decoration: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px; /* Space between icon and text */
-}
-
-/* Style for the "Change Metrics" button */
-.btn-secondary {
-    background-color: #f0f0f0; /* Light/neutral color */
+.dashboard-title {
+    grid-column: 1 / -1; 
+    text-align: left;
+    margin-bottom: 15px;
+    font-size: 2.2em;
     color: #333;
-    border: 1px solid #ccc;
-}
-.btn-secondary:hover {
-    background-color: #e0e0e0;
 }
 
-/* Style for the "New Ticker" button */
-.btn-primary {
-    background-color: #007bff; /* Primary/accent color */
-    color: white;
-    border: 1px solid #007bff;
-}
-.btn-primary:hover {
-    background-color: #0056b3;
-}
-
-/* Separator line for better visual flow */
 .nav-separator {
-    grid-column: 1 / -1;
+    grid-column: 1 / -1; 
     border: none;
     border-top: 1px solid #eee;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }

@@ -56,7 +56,7 @@ def index():
         session['period'] = period
 
         # Clear any previous analysis data
-        session.pop('clean_data', None)
+        # We only need to clear the session key pointing to the cache
         session.pop('data_cache_key', None)
         session.pop('selected_methods', None)
         session.pop('sma_window', None)
@@ -136,7 +136,7 @@ def metrics():
         
         # --- Data Fetching Logic with Fallback ---
         try:
-            # Use the original ticker for the API fetch, even if it's currently '(BACKUP)' in the session
+            # Use the original ticker for the API fetch, stripping the (BACKUP) tag if present
             current_ticker = ticker.replace(' (BACKUP)', '').strip()
             
             try:
@@ -163,6 +163,7 @@ def metrics():
 
 
             if clean_data is None or clean_data.empty:
+                # This catches if both API and backup failed or returned empty data
                 raise ValueError("Both API fetch/clean and backup data processing failed.")
 
             # Store clean data using the in-memory cache and save the small key to the session
@@ -203,7 +204,7 @@ def results():
         period = session['period']
         selected_methods = session['selected_methods']
 
-        # Retrieve DataFrame from the cache
+        # Retrieve DataFrame from the cache (and remove the key from session immediately)
         data_cache_key = session.pop('data_cache_key', None)
 
         if not data_cache_key:
@@ -214,8 +215,8 @@ def results():
         if clean_data is None or clean_data.empty:
             raise ValueError("Analysis data not found in cache or is empty. Please restart the analysis.")
 
-        # Ensure the date column is correct (although data_handler should handle it)
-        clean_data['date'] = pd.to_datetime(clean_data['date'])
+        # --- OPTIMIZATION: Removed redundant pd.to_datetime call. 
+        # The data_handler ensures clean_data['date'] is already datetime type.
 
         # Initialize results dictionary
         analysis_results = {
@@ -237,7 +238,7 @@ def results():
                 prediction_plot_html = forecast_prices(clean_data, 'close', window_size)
                 
                 if prediction_plot_html:
-                    # Store the raw HTML string (it's already prepared by forecast_prices)
+                    # Store the raw HTML string 
                     analysis_results['plots']['prediction'] = prediction_plot_html
                 else:
                     # If None, the template will display 'Prediction plot unavailable.'
@@ -380,7 +381,7 @@ def reset():
 @main_bp.errorhandler(404)
 def page_not_found(e):
     """
-    Handle 404 errors (uses main_bp.errorhandler now)
+    Handle 404 errors
     """
     return render_template('404.html'), 404
 
@@ -388,6 +389,6 @@ def page_not_found(e):
 @main_bp.errorhandler(500)
 def internal_server_error(e):
     """
-    Handle 500 errors (uses main_bp.errorhandler now)
+    Handle 500 errors
     """
     return render_template('500.html'), 500

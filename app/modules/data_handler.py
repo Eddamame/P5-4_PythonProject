@@ -1,68 +1,60 @@
 import pandas as pd
 import os
 import uuid
-from typing import List, Tuple, Optional, Dict
-from flask import current_app # Crucial for finding files relative to the app root
+from typing import Optional, Dict, Tuple
+from flask import current_app
+from datetime import datetime, date
+# Removed unused imports: dateutil.relativedelta, relativedelta 
 
 # --- In-Memory Data Cache (Fix for Session Overflow) ---
-# Use a simple dictionary for process-level caching of large DataFrames.
 _data_cache: Dict[str, pd.DataFrame] = {}
 
 def store_clean_data(df: pd.DataFrame) -> str:
     """
     Stores a clean DataFrame in the in-memory cache and returns a unique key.
-    This replaces storing the entire DataFrame in the session.
     """
     cache_key = str(uuid.uuid4())
     _data_cache[cache_key] = df
-    # Log for debugging purposes
     try:
         current_app.logger.info(f"Stored DataFrame in cache with key: {cache_key}. Current cache size: {len(_data_cache)}")
     except RuntimeError:
-        pass # Ignore if not in application context
+        pass
     return cache_key
 
 def retrieve_clean_data(cache_key: str) -> Optional[pd.DataFrame]:
     """
     Retrieves a clean DataFrame from the cache and immediately removes it.
-    The data is removed upon retrieval to prevent cache bloat and reuse.
     """
     df = _data_cache.pop(cache_key, None)
-    # Log for debugging purposes
     try:
         current_app.logger.info(f"Retrieved and removed DataFrame for key: {cache_key}. Remaining cache size: {len(_data_cache)}")
     except RuntimeError:
-        pass # Ignore if not in application context
+        pass
     return df
 
+# --- Removed: _get_start_date_from_period is now integrated into handle_backup_csv for reliability. ---
 
-# --- 1. Function for Cleaning Live API Data (Takes a DataFrame) ---
+
+# --- 1. Function for Cleaning Live API Data (Simplified) ---
+
 def api_data_handler(
     df_raw: pd.DataFrame, 
-    ticker: str, 
-    filterTime: Optional[Tuple[int, int]] = None
+    ticker: str
 ) -> pd.DataFrame:
     """
     Data Handler for cleaning and standardizing the DataFrame returned by yfinance API.
     
-    Parameters:
-        df_raw (pd.DataFrame): Raw DataFrame from get_hist_data (yfinance).
-        ticker (str): The single ticker requested.
-        filterTime (tuple[int, int]): Optional input for time filtering.
-        
-    Output:
-        pd.DataFrame: Cleaned, filtered, and standardized DataFrame.
+    The raw data is assumed to be filtered for the correct period already.
     """
     df = df_raw.copy()
     
     # 1. Standardize column names to lowercase
     df.columns = [col.lower() for col in df.columns]
 
-    # Ensure date column is named 'date' and set to datetime (Handles yfinance index/column variations)
+    # Ensure date column is named 'date' and set to datetime 
     if 'date' not in df.columns and 'Date' in df_raw.columns:
         df = df.rename(columns={'Date': 'date'})
     
-    # Check if the date is in the index (common for yfinance output)
     if df.index.name and df.index.name.lower() in ('date', 'Date'):
         df = df.reset_index(names=['date'])
         
@@ -73,28 +65,21 @@ def api_data_handler(
     df['name'] = ticker.replace(' (BACKUP)', '').strip()
     df['name'] = df['name'].astype(str)
         
-    # 3. Ensure correct data-types for numeric columns (Use coerce for robustness)
+    # 3. Ensure correct data-types for numeric columns
     for col in ['open','close','high','low','volume']:
-         if col in df.columns:
-             # Use coerce to turn bad strings (or weird floats) into NaN
-             df[col] = pd.to_numeric(df[col], errors='coerce')
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
     
     # 4. Remove rows with any missing values *after* conversion
     df.dropna(subset=['date', 'close', 'volume'], inplace=True)
 
-    # 5. Filter by time (years)
-    if filterTime:
-        start, end = filterTime
-        df = df[(df['date'].dt.year >= start) & (df['date'].dt.year <= end)]
-
-    # 6. Ensure 2 decimal points for $
+    # 5. Ensure 2 decimal points for $
     df = df.round({col: 2 for col in ['open', 'high', 'low', 'close'] if col in df.columns})
 
-    # 7. Sort and return required columns
+    # 6. Sort and return required columns
     df.sort_values(by=['date'], inplace=True)
     df.reset_index(drop=True, inplace=True)
     
-    # Ensure all required columns are present before returning
     required_cols = ['date', 'open', 'close', 'high', 'low', 'volume', 'name']
     for col in required_cols:
         if col not in df.columns:
@@ -103,19 +88,20 @@ def api_data_handler(
     return df[required_cols]
 
 
-# --- 2. Function for Handling Backup CSV Data (Takes a file path and cleans it) ---
+# --- 2. Function for Handling Backup CSV Data (Now filters by period) ---
+
 def handle_backup_csv(
     ticker: str, 
-    period: str, # Period is not used for CSV filtering, but kept for function signature
-    filterTime: Optional[Tuple[int, int]] = None
+    period: str, # <-- This parameter is used for filtering
+    filterTime: Optional[Tuple[int, int]] = None # Kept for signature but ignored
 ) -> pd.DataFrame:
     """
-    Loads, filters, and processes the historical backup data file.
+    Loads, filters, and processes the historical backup data file, filtering
+    the data based on the requested 'period' string (e.g., '1y', '2y', '3y').
     """
     
     # Define the absolute path to the backup CSV file
     try:
-        # Use os.pardir to step up one directory from the app's root to the project root
         backup_file_path = os.path.join(
             current_app.root_path, 
             os.pardir, 
@@ -123,27 +109,30 @@ def handle_backup_csv(
             'backup_data.csv'
         )
     except RuntimeError:
-        # Fallback if current_app is not available (e.g., testing outside of app context)
         backup_file_path = os.path.join('data', 'backup_data.csv')
         
     try:
         current_app.logger.info(f"DEBUG: Attempting to load and process backup data from: {backup_file_path}")
     except RuntimeError:
-        pass # Ignore if not in application context
+        pass
     
     try:
-        # Load data from the contingency CSV
-        df = pd.read_csv(backup_file_path)
+        # --- CRITICAL FIX: Load the CSV and parse the 'date' column immediately ---
+        df = pd.read_csv(
+            backup_file_path,
+            # Tell Pandas to parse 'date' as a datetime object
+            parse_dates=['date'],   
+            # Tell the parser to use Day/Month/Year (DD/MM/YYYY) format
+            dayfirst=True          
+        )
     except FileNotFoundError:
         raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}. Please ensure it exists.")
     except Exception as e:
         raise Exception(f"Error reading backup CSV file: {e}")
 
     
-    # Standardize column names to lowercase
+    # Standardize column names and clean ticker
     df.columns = [col.lower() for col in df.columns]
-    
-    # FIX 1: Strip '(BACKUP)' from the ticker name for filtering
     clean_ticker = ticker.replace(' (BACKUP)', '').strip()
     
     # Filter specific Names
@@ -156,22 +145,65 @@ def handle_backup_csv(
     if df.empty:
         raise ValueError(f"No data found for ticker '{clean_ticker}' in backup file.")
 
-    # Ensure correct data-types, using COERCE for robustness against odd price strings
+    # Convert data types
     df['name'] = df['name'].astype(str)
-    # Convert date, using coerce to turn bad values into NaT
-    df['date'] = pd.to_datetime(df['date'], errors='coerce') 
     
-    # Use errors='coerce' to handle bad numeric strings, then drop rows that failed.
+    # --- FIX: Explicitly convert 'date' column to datetime again for robustness ---
+    # The 'unsupported operand type(s) for -: 'str' and 'DateOffset'' error
+    # means latest_date (df['date'].max()) is a string/object, not a datetime.
+    df['date'] = pd.to_datetime(df['date'], errors='coerce') 
+    # --- END FIX ---
+
     for col in ['open','close','high','low','volume']:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Drop any rows where date or crucial numeric columns failed conversion
     df.dropna(subset=['date', 'close', 'volume'], inplace=True)
     
-    # Filter by time (years)
-    if filterTime:
-        start, end = filterTime
-        df = df[(df['date'].dt.year >= start) & (df['date'].dt.year <= end)]
+    # Final check after cleaning
+    if df.empty:
+        raise ValueError(f"Ticker '{clean_ticker}' found in backup, but all rows were dropped due to bad date/numeric values.")
+
+    # --- Robust Filtering by Period using Pandas DateOffset ---
+    # We use a nested try/except to specifically target issues in date filtering
+    try:
+        # 1. Determine the period in years (default to 5 years if period is invalid/missing)
+        period_years = 0
+        if period.lower().endswith('y'):
+            try:
+                period_years = int(period[:-1])
+            except ValueError:
+                # Fallback if period is '1z' or 'ay'
+                period_years = 5 
+        
+        if period_years == 0:
+            # Fallback if period is '1' or '2' (missing the 'y')
+            period_years = 5 
+            
+        
+        # 2. Calculate the start date using the latest date in the loaded dataframe (best practice)
+        latest_date = df['date'].max()
+        
+        # Guard against NaT (Not a Time) in case of unexpected data issues
+        if pd.isna(latest_date):
+            raise ValueError("Maximum date value in the dataset is invalid (NaT). Cannot calculate cutoff date.")
+
+        # Use pd.DateOffset to reliably calculate the cutoff time
+        start_date_cutoff = latest_date - pd.DateOffset(years=period_years)
+        
+        # 3. Filter the DataFrame
+        df = df[df['date'] >= start_date_cutoff].copy()
+        
+    except Exception as e:
+        # Log the specific failure reason
+        try:
+            current_app.logger.warning(
+                f"Date filtering failed for period '{period}' (interpreted as {period_years} years). "
+                f"Using full available dataset. Error: {e}"
+            )
+        except RuntimeError:
+            pass # Ignore if not running within Flask app context
 
     # Ensure 2 decimal points for $
     df = df.round({'open': 2, 'high': 2, 'low': 2, 'close': 2})
@@ -180,18 +212,5 @@ def handle_backup_csv(
     df.sort_values(by=['name', 'date'], inplace=True)
     df.reset_index(drop=True, inplace=True)
     
-    # Ensure all required columns are present before returning
     required_cols = ['date', 'open', 'close', 'high', 'low', 'volume', 'name']
     return df[required_cols]
-
-
-# # This alias is necessary because routes.py calls this name for API data handling.
-# def api_data_handler(
-#     y_data: pd.DataFrame, 
-#     ticker: str, # Ticker is required to set the 'name' column
-#     filterTime: Optional[Tuple[int, int]] = None
-# ) -> pd.DataFrame:
-#     """
-#     Wrapper for clean_api_data used in routes.py to standardize the output.
-#     """
-#     return clean_api_data(y_data, ticker=ticker, filterTime=filterTime)

@@ -119,7 +119,7 @@ nav input:checked ~ #menu { display: flex; }
 .card {
     margin: 0 auto;
     width: 100%;
-    max-width: 900px; 
+    max-width: 1400px; 
     background-color: #ffffff;
     padding: 2.5rem;
     border-radius: var(--card-radius);
