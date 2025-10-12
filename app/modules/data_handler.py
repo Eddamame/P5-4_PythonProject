@@ -159,6 +159,7 @@ def handle_backup_csv(
         raise ValueError(f"Ticker '{clean_ticker}' found in backup, but all rows were dropped due to bad date/numeric values.")
 
     # --- Robust Filtering by Period using Pandas DateOffset ---
+    # We use a nested try/except to specifically target issues in date filtering
     try:
         # 1. Determine the period in years (default to 5 years if period is invalid/missing)
         period_years = 0
@@ -166,14 +167,21 @@ def handle_backup_csv(
             try:
                 period_years = int(period[:-1])
             except ValueError:
-                period_years = 5 # Default safety fallback if period format is wrong
+                # Fallback if period is '1z' or 'ay'
+                period_years = 5 
         
         if period_years == 0:
-            period_years = 5 # Default to 5 years if period is not '1y', '2y', '3y', etc.
+            # Fallback if period is '1' or '2' (missing the 'y')
+            period_years = 5 
             
         
         # 2. Calculate the start date using the latest date in the loaded dataframe (best practice)
         latest_date = df['date'].max()
+        
+        # Guard against NaT (Not a Time) in case of unexpected data issues
+        if pd.isna(latest_date):
+            raise ValueError("Maximum date value in the dataset is invalid (NaT). Cannot calculate cutoff date.")
+
         # Use pd.DateOffset to reliably calculate the cutoff time
         start_date_cutoff = latest_date - pd.DateOffset(years=period_years)
         
@@ -181,10 +189,14 @@ def handle_backup_csv(
         df = df[df['date'] >= start_date_cutoff].copy()
         
     except Exception as e:
+        # Log the specific failure reason
         try:
-            current_app.logger.warning(f"Failed to apply period filter '{period}' to backup data. Using full dataset. Error: {e}")
+            current_app.logger.warning(
+                f"Date filtering failed for period '{period}' (interpreted as {period_years} years). "
+                f"Using full available dataset. Error: {e}"
+            )
         except RuntimeError:
-            pass 
+            pass # Ignore if not running within Flask app context
 
     # Ensure 2 decimal points for $
     df = df.round({'open': 2, 'high': 2, 'low': 2, 'close': 2})
