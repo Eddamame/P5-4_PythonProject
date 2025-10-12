@@ -47,4 +47,58 @@
         {% endif %}
 
         {% if 'sma' in selected_methods %}
-        <div class="chart-card half-
+        <div class="chart-card half-width">
+            <h2 class="chart-title">Simple Moving Average ({{ results.metrics.sma_window }} days)</h2>
+            {% if results.plots.sma %}
+                {{ results.plots.sma|safe }}
+            {% else %}
+                <p class="error">SMA plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if 'daily_returns' in selected_methods %}
+        <div class="chart-card half-width">
+            <h2 class="chart-title">Daily Returns</h2>
+            {% if results.plots.daily_returns %}
+                {{ results.plots.daily_returns|safe }}
+                <p>Average Daily Return: {{ results.metrics.avg_daily_return }}</p>
+                <p>Volatility: {{ results.metrics.return_volatility }}</p>
+            {% else %}
+                <p class="error">Daily Returns plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if 'max_profit' in selected_methods %}
+        <div class="chart-card full-width">
+            <h2 class="chart-title">Maximum Profit</h2>
+            {% if results.plots.max_profit %}
+                {{ results.plots.max_profit|safe }}
+            {% else %}
+                <p class="error">Max Profit plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if 'runs' in selected_methods %}
+        <div class="chart-card full-width">
+            <h2 class="chart-title">Market Price Runs</h2>
+            {% if results.plots.runs %}
+                {{ results.plots.runs|safe }}
+                <p>Total Runs: {{ results.metrics.total_runs }}</p>
+                <p>Average Run Length: {{ results.metrics.avg_run_length }}</p>
+                <p>Longest Run: {{ results.metrics.longest_run }}</p>
+            {% else %}
+                <p class="error">Runs plot unavailable.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </main>
+
+    <footer>
+        <hr>
+        &copy; Stock Analysis. All rights reserved.
+    </footer>
+</body>
+</html>
