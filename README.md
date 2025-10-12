@@ -15,6 +15,7 @@ The **Stock Market Analysis Project** is a web application built with **Python F
     * Market Price Runs (identifying consecutive up/down days).
     * Maximum Profit calculation over the analysis period.
 * **Interactive Visualizations:** Generates clear and insightful charts for all selected metrics.
+* **Automated Validation Suite:** Built-in testing framework to validate all modules and ensure data integrity.
 
 ---
 
@@ -134,6 +135,37 @@ The application follows a three-step routing process:
     * `metrics.py` calculates the selected metrics.
     * `prediction.py` runs the forecast using the model logic.
     * `visualization.py` generates charts using the calculated results.
+
+## Validation & Testing
+
+The project includes a comprehensive validation system (validation.py) that tests all core modules to ensure data integrity and function correctness.
+
+### Running Validation Tests
+* **Option 1: Web Interface**
+    1. Start the Flask application: python main.py
+    2. Navigate to http://127.0.0.1:5000/validate
+    3. View real-time test results in the browser dashboard
+
+* **Option 2: Command Line**
+    #### Run validation directly
+    python app/modules/validation.py
+
+    #### Or via Python module
+    python -m app.modules.validation
+
+## What Gets Validated
+* **The validation suite runs 38+ automated tests across 5 categories:**
+
+|`Test Category`	        `Tests`	`What It Validates`|
+* **Data Handler**	            7	API data processing, column presence, data types, date parsing, filtering sorting
+
+**SMA Calculation**	            7	Moving average accuracy, window sizes, padding, DataFrame structure
+
+**Runs Analysis**	            9	Run detection, direction classification, length calculation, filtering
+
+**Returns & Profit**	        8	Daily return calculation, max profit algorithm, edge cases
+
+**Real Data Compatibility**	    7	Column naming, data formats, logical constraints, stock symbol validation   
 
 ---
 
