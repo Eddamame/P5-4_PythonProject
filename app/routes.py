@@ -354,20 +354,84 @@ def results():
         flash(f"Critical error generating results: {str(e)}", 'error')
         return redirect(url_for('main.index'))
 
-@main_bp.route('/validation')
-def show_validation():
-    from app.modules import validation  # import validation module
-
-    # Clear previous logs
-    validation.validation_log.clear()
-
-    # Run validation
-    all_results = validation.run_all_validations()
-
-    # Send results and logs to template
-    return render_template('validation.html',
-                           results=all_results,
-                           logs=validation.validation_log)
+@main_bp.route('/validate')
+def validate():
+    """
+    Validation route: Run all validation tests and display results
+    """
+    try:
+        # Import here to avoid circular imports
+        from app.modules.validation import run_all_validations, validation_log
+        
+        # Clear previous validation log
+        validation_log.clear()
+        
+        # Run all validation tests
+        validation_results = run_all_validations()
+        
+        # Calculate summary statistics
+        total_passed = 0
+        total_tests = 0
+        category_results = []
+        
+        for category, result_data in validation_results.items():
+            passed = result_data['passed']
+            total = result_data['total']
+            tests = result_data['tests']
+            
+            total_passed += passed
+            total_tests += total
+            
+            percentage = (passed / total * 100) if total > 0 else 0
+            status = 'success' if passed == total else 'warning' if passed > 0 else 'danger'
+            
+            category_results.append({
+                'name': category.replace('_', ' ').title(),
+                'passed': passed,
+                'total': total,
+                'percentage': percentage,
+                'status': status,
+                'tests': tests  # Include individual test details
+            })
+        
+        overall_percentage = (total_passed / total_tests * 100) if total_tests > 0 else 0
+        
+        if total_passed == total_tests:
+            overall_status = 'success'
+            overall_message = 'All tests passed! Your system is ready for integration.'
+        elif overall_percentage >= 80:
+            overall_status = 'warning'
+            overall_message = 'Most tests passed. Minor issues to address.'
+        elif overall_percentage >= 60:
+            overall_status = 'warning'
+            overall_message = 'Partial success. Some components need debugging.'
+        else:
+            overall_status = 'danger'
+            overall_message = 'Significant issues detected. Please review failed tests.'
+        
+        summary = {
+            'total_passed': total_passed,
+            'total_tests': total_tests,
+            'percentage': overall_percentage,
+            'status': overall_status,
+            'message': overall_message
+        }
+        
+        # Get validation log for detailed output
+        log_output = '\n'.join(validation_log)
+        
+        # ✅ FIXED: Use correct variable names that match the template
+        return render_template('validate.html',
+                             summary=summary,
+                             categories=category_results,
+                             log_output=log_output)
+    
+    except Exception as e:
+        current_app.logger.error(f"Validation error: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error running validation tests: {str(e)}", 'error')
+        return redirect(url_for('main.index'))
 
 @main_bp.route('/reset')
 def reset():

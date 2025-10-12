@@ -33,6 +33,7 @@ def plot_price_and_sma(df, window_size):
         for w in window_sizes:
             sma_col = f'sma_{w}'
             if sma_col not in df.columns:
+                df = calculate_sma(df, w)
                 # Assuming calculate_sma handles calculation and returns updated df
                 # If it doesn't, this needs correction based on actual implementation.
                 # For now, rely on external calculation/column existence.
