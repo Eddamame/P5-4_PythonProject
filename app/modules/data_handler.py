@@ -4,7 +4,7 @@ import uuid
 from typing import Optional, Dict, Tuple
 from flask import current_app
 from datetime import datetime, date
-from dateutil.relativedelta import relativedelta 
+# Removed unused imports: dateutil.relativedelta, relativedelta 
 
 # --- In-Memory Data Cache (Fix for Session Overflow) ---
 _data_cache: Dict[str, pd.DataFrame] = {}
@@ -32,22 +32,7 @@ def retrieve_clean_data(cache_key: str) -> Optional[pd.DataFrame]:
         pass
     return df
 
-# --- Helper Function for Date Calculation (Used by Backup Handler) ---
-
-def _get_start_date_from_period(period: str) -> date:
-    """Converts a period string ('1y', '2y', etc.) to a required start date."""
-    today = datetime.now().date()
-    
-    # Use the same logic that yfinance implements
-    if period == '1y':
-        return today - relativedelta(years=1)
-    elif period == '2y':
-        return today - relativedelta(years=2)
-    elif period == '3y':
-        return today - relativedelta(years=3)
-    
-    # Fallback to a wider range if an unexpected period is passed
-    return today - relativedelta(years=5) 
+# --- Removed: _get_start_date_from_period is now integrated into handle_backup_csv for reliability. ---
 
 
 # --- 1. Function for Cleaning Live API Data (Simplified) ---
@@ -107,12 +92,12 @@ def api_data_handler(
 
 def handle_backup_csv(
     ticker: str, 
-    period: str, # <-- CRITICAL: This parameter is now USED for filtering
+    period: str, # <-- This parameter is used for filtering
     filterTime: Optional[Tuple[int, int]] = None # Kept for signature but ignored
 ) -> pd.DataFrame:
     """
     Loads, filters, and processes the historical backup data file, filtering
-    the data based on the requested 'period' string.
+    the data based on the requested 'period' string (e.g., '1y', '2y', '3y').
     """
     
     # Define the absolute path to the backup CSV file
@@ -138,7 +123,7 @@ def handle_backup_csv(
             # Tell Pandas to parse 'date' as a datetime object
             parse_dates=['date'],   
             # Tell the parser to use Day/Month/Year (DD/MM/YYYY) format
-            dayfirst=True           
+            dayfirst=True          
         )
     except FileNotFoundError:
         raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}. Please ensure it exists.")
@@ -163,9 +148,6 @@ def handle_backup_csv(
     # Convert data types
     df['name'] = df['name'].astype(str)
     
-    # The 'date' column is now already a datetime object due to pd.read_csv
-    # We remove the old manual conversion: df['date'] = pd.to_datetime(df['date'], dayfirst=True, errors='coerce')
-    
     for col in ['open','close','high','low','volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
@@ -176,16 +158,32 @@ def handle_backup_csv(
     if df.empty:
         raise ValueError(f"Ticker '{clean_ticker}' found in backup, but all rows were dropped due to bad date/numeric values.")
 
-    # --- Filter by Period ---
+    # --- Robust Filtering by Period using Pandas DateOffset ---
     try:
-        start_date = _get_start_date_from_period(period)
-        # Filter the DataFrame to include only dates from the start_date onwards
-        # This comparison is highly reliable when 'date' is a proper datetime object.
-        df = df[df['date'].dt.date >= start_date].copy()
+        # 1. Determine the period in years (default to 5 years if period is invalid/missing)
+        period_years = 0
+        if period.lower().endswith('y'):
+            try:
+                period_years = int(period[:-1])
+            except ValueError:
+                period_years = 5 # Default safety fallback if period format is wrong
+        
+        if period_years == 0:
+            period_years = 5 # Default to 5 years if period is not '1y', '2y', '3y', etc.
+            
+        
+        # 2. Calculate the start date using the latest date in the loaded dataframe (best practice)
+        latest_date = df['date'].max()
+        # Use pd.DateOffset to reliably calculate the cutoff time
+        start_date_cutoff = latest_date - pd.DateOffset(years=period_years)
+        
+        # 3. Filter the DataFrame
+        df = df[df['date'] >= start_date_cutoff].copy()
+        
     except Exception as e:
-         try:
-            current_app.logger.warning(f"Failed to apply period filter '{period}' to backup data: {e}")
-         except RuntimeError:
+        try:
+            current_app.logger.warning(f"Failed to apply period filter '{period}' to backup data. Using full dataset. Error: {e}")
+        except RuntimeError:
             pass 
 
     # Ensure 2 decimal points for $
