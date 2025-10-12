@@ -7,7 +7,6 @@ from datetime import datetime, date
 from dateutil.relativedelta import relativedelta 
 
 # --- In-Memory Data Cache (Fix for Session Overflow) ---
-# Use a simple dictionary for process-level caching of large DataFrames.
 _data_cache: Dict[str, pd.DataFrame] = {}
 
 def store_clean_data(df: pd.DataFrame) -> str:
@@ -124,9 +123,6 @@ def handle_backup_csv(
             'data', 
             'backup_data.csv'
         )
-        # --- DEBUG LINES (Kept for path verification) ---
-        print(f"DEBUG: Flask Root Path: {current_app.root_path}")
-        print(f"DEBUG: Calculated Backup Path: {backup_file_path}")
     except RuntimeError:
         backup_file_path = os.path.join('data', 'backup_data.csv')
         
@@ -155,22 +151,23 @@ def handle_backup_csv(
     df = df[df['name'] == clean_ticker].copy()
     
     if df.empty:
-        # Check this after initial filtering.
         raise ValueError(f"No data found for ticker '{clean_ticker}' in backup file.")
 
     # Convert data types
     df['name'] = df['name'].astype(str)
     
-    # --- CRITICAL FIX: Explicitly set format to DD/MM/YYYY ---
-    df['date'] = pd.to_datetime(df['date'], format='%d/%m/%Y', errors='coerce') 
+    # --- CRITICAL FIX: Use dayfirst=True for robust DD/MM/YYYY parsing ---
+    # This handles the 8/2/2013 and 11/3/2013 format correctly.
+    df['date'] = pd.to_datetime(df['date'], dayfirst=True, errors='coerce') 
     
     for col in ['open','close','high','low','volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Drop any rows where date or crucial numeric columns failed conversion
+    # This is where rows with bad dates (NaT) or bad numerics (NaN) are dropped.
     df.dropna(subset=['date', 'close', 'volume'], inplace=True)
     
-    # Check for empty DataFrame again after cleaning (in case all rows failed date conversion)
+    # Final check after cleaning
     if df.empty:
         raise ValueError(f"Ticker '{clean_ticker}' found in backup, but all rows were dropped due to bad date/numeric values.")
 
