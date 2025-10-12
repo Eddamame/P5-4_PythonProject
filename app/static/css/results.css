@@ -1,6 +1,6 @@
 .dashboard-grid {
     display: grid;
-    /* 4 columns is correct */
+    /* 4 columns for flexible arrangement */
     grid-template-columns: repeat(4, 1fr); 
     /* Tighter gap between cards for compactness */
     gap: 10px; 
@@ -25,8 +25,8 @@
     display: flex; 
     flex-direction: column;
     
-    /* Reduced min-height to allow more charts on screen */
-    min-height: 280px; 
+    /* Min height to accommodate the smallest charts (Daily Returns/Max Profit) */
+    min-height: 250px; 
 }
 
 .chart-title {
@@ -47,29 +47,20 @@
     min-height: 200px; 
 }
 
-/* 1. Full-width charts (Max Profit, Runs) */
+/* 1. Market Price Runs: Full-width (100%) */
+/* This chart will span all 4 columns (grid-column: span 4) */
 .chart-card.full-width {
     grid-column: span 4; 
+    min-height: 300px; /* Adjust min-height to match the Python chart height */
 }
 
-/* 2. Large chart (Predictive Model) is 75% width, allowing one chart beside it */
-.chart-card.large-chart {
-    grid-column: span 3; 
-    /* Main chart gets slightly more height */
-    min-height: 400px; 
+/* 2. Predictive Model, SMA, Daily Returns, Max Profit: Half-share (50% width) */
+/* These charts will span 2 columns out of 4, ensuring equal space in their row. */
+.chart-card.half-share {
+    grid-column: span 2; 
 }
 
-/* 3. Half-width charts (SMA, Daily Returns) are 25% width */
-.chart-card.half-width {
-    grid-column: span 1; 
-}
-
-/* Optional: Targets the third chart card (Daily Returns) if you want it wider */
-.chart-card:nth-of-type(6) { 
-    grid-column: span 2; /* Making Daily Returns 50% width */
-}
-
-/* --- Remaining Styles --- */
+/* --- Remaining Styles (Unchanged) --- */
 
 .chart-card p {
     font-size: 0.9em;
