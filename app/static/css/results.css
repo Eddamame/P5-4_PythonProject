@@ -1,49 +1,90 @@
-/* Style for the container holding the navigation buttons */
-.navigation-controls {
-    /* Assuming you are using a grid, this makes it span the whole top row */
-    grid-column: 1 / -1; 
-    display: flex;
-    justify-content: center; /* Center the buttons horizontally */
-    gap: 20px; /* Space between the buttons */
-    margin: 20px 0; /* Vertical spacing around the buttons */
+/* --- Main Dashboard Grid Layout --- */
+.dashboard-grid {
+    display: grid;
+    /* Define 3 columns for a flexible layout:
+       - 1st column: takes 1 fraction of available space
+       - 2nd column: takes 1 fraction of available space
+       - 3rd column: takes 1 fraction of available space
+       You can adjust these values (e.g., 2fr 1fr 1fr for a wider first column)
+       based on how wide you want each panel.
+    */
+    grid-template-columns: 1fr 1fr 1fr; 
+    gap: 20px; /* Space between grid items (your chart cards) */
+    max-width: 1200px; /* Limit overall width for better readability */
+    margin: 20px auto; /* Center the grid on the page with vertical margin */
+    padding: 0 20px; /* Add some padding on the sides */
 }
 
-/* Basic button/link styling (adjust based on your existing btn classes) */
-.btn {
-    text-decoration: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px; /* Space between icon and text */
+/* --- Chart Card Sizing within the Grid --- */
+
+/* Default chart card styling */
+.chart-card {
+    background-color: #ffffff; /* Example: light background for cards */
+    border: 1px solid #e0e0e0; /* Subtle border */
+    border-radius: 8px; /* Slightly rounded corners */
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Soft shadow */
+    display: flex; /* Use flexbox for content inside card */
+    flex-direction: column; /* Stack title and plot vertically */
 }
 
-/* Style for the "Change Metrics" button */
-.btn-secondary {
-    background-color: #f0f0f0; /* Light/neutral color */
+.chart-title {
+    font-size: 1.3em;
     color: #333;
-    border: 1px solid #ccc;
-}
-.btn-secondary:hover {
-    background-color: #e0e0e0;
-}
-
-/* Style for the "New Ticker" button */
-.btn-primary {
-    background-color: #007bff; /* Primary/accent color */
-    color: white;
-    border: 1px solid #007bff;
-}
-.btn-primary:hover {
-    background-color: #0056b3;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0; /* Light separator under title */
+    padding-bottom: 10px;
 }
 
-/* Separator line for better visual flow */
+
+.chart-card > div { 
+    flex-grow: 1; /* Allow plot to take up remaining vertical space */
+}
+
+
+
+/* Charts that should span all columns */
+.chart-card.full-width {
+    grid-column: 1 / -1; /* Spans from the first column line to the last */
+}
+
+/* Large chart (e.g., Predictive Model) should span 2 columns */
+.chart-card.large-chart {
+    grid-column: span 2; /* Spans two of the defined columns */
+}
+
+/* Half-width charts will naturally take up one column (1fr) each.
+*/
+
+/* If you want the metric paragraphs to be within the card, not affecting the plot layout */
+.chart-card p {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 10px;
+    line-height: 1.4;
+}
+
+/* --- Navigation Controls (adjusting for current desired layout) --- */
+.navigation-controls {
+    grid-column: 1 / -1; /* Keep it spanning full width at the top */
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right, similar to Image 2 */
+    gap: 15px; /* Slightly tighter gap */
+    margin-bottom: 20px;
+}
+
+.dashboard-title {
+    grid-column: 1 / -1; /* Title also spans full width */
+    text-align: left;
+    margin-bottom: 15px;
+    font-size: 2.2em;
+    color: #333;
+}
+
 .nav-separator {
-    grid-column: 1 / -1;
+    grid-column: 1 / -1; /* Separator spans full width */
     border: none;
     border-top: 1px solid #eee;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
