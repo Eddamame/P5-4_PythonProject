@@ -1,8 +1,8 @@
 import os
 from app import create_app
-from config import Config # Assuming you have a config.py file in your project root
+from config import Config 
 
-# 1. Initialize the application using the factory function
+# Initialize the application using the factory function
 # This function registers routes from routes.py and loads config
 app = create_app(config_class=Config)
 
@@ -13,11 +13,11 @@ if __name__ == '__main__':
     configuration required for deployment environments like Railway.
     """
     
-    # CRITICAL STEP 1: Read the dynamic port provided by the host. 
+    # Read the dynamic port provided by the host. 
     # It defaults to 5000 for local testing.
     port = int(os.environ.get("PORT", 5000))
     
-    # CRITICAL STEP 2: Bind to '0.0.0.0' so the external proxy (Railway) can connect.
+    # Bind to '0.0.0.0' so the external proxy (Railway) can connect.
     # This resolves the "connection refused" (502) error.
     app.run(
         debug=False,
