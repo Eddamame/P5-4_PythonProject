@@ -1,8 +1,63 @@
-.dashboard-grid {
+:root {
+    /* The only variable we explicitly define here is the text color, 
+       just to make sure it picks up the primary dark shade from global.css.
+       We rely on global.css for all other variables. */
+    color: var(--text-primary);
+}
+
+/* General Body and Header Structure */
+body {
+    /* Use the global light background variable */
+    background-color: var(--bg-light); 
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+header {
+    /* Use the global white body background and shadow */
+    background-color: var(--bg-body);
+    box-shadow: var(--box-shadow);
+    padding: 15px 20px;
+    text-align: center;
+}
+
+#logo {
+    /* The width is likely set in global.css, but keep for safety */
+    max-width: 150px;
+    height: auto;
+}
+
+/* --- Button Styling (Ensuring consistent structure and secondary color) --- */
+.btn {
+    /* Keep structural styles for alignment and transitions */
+    padding: 10px 20px;
+    border-radius: var(--card-radius); /* Use global radius */
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s, transform 0.1s; 
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+/* .btn-primary color is now defined by the robust style block in global.css (accent-color) */
+
+.btn-secondary {
+    /* Use text-secondary (Gray 500) for the background to make it secondary */
+    background-color: var(--text-secondary); 
+    color: white;
+}
+.btn-secondary:hover {
+    /* Darken slightly on hover for visual feedback */
+    background-color: var(--text-primary); 
+    transform: translateY(-1px);
+}
+
+
+/* --- Custom Compact Grid Layout (4-Column Base) --- */
+main.dashboard-grid {
     display: grid;
-    /* 4 columns for flexible arrangement */
     grid-template-columns: repeat(4, 1fr); 
-    /* Tighter gap between cards for compactness */
     gap: 10px; 
     max-width: 1400px; 
     margin: 20px auto; 
@@ -16,57 +71,74 @@
 }
 
 .chart-card {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0; 
-    border-radius: 8px; 
-    /* Reduced padding for compactness */
+    /* Use global variables for card aesthetics */
+    background-color: var(--bg-body); /* White background */
+    border: 1px solid var(--border-color); /* Light border */
+    border-radius: var(--card-radius); /* Global radius */
     padding: 10px; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    box-shadow: var(--box-shadow); /* Global shadow */
     display: flex; 
     flex-direction: column;
-    
-    /* Min height to accommodate the smallest charts (Daily Returns/Max Profit) */
     min-height: 250px; 
 }
 
 .chart-title {
-    /* Slightly smaller title font */
     font-size: 1em; 
-    color: #333;
+    /* Use global primary color (main green) for titles */
+    color: var(--primary-color); 
+    font-weight: 700;
     margin-top: 0;
-    /* Reduced bottom margin */
     margin-bottom: 5px; 
-    border-bottom: 1px solid #f0f0f0;
-    /* Reduced title padding */
+    /* Use global border color for separation */
+    border-bottom: 1px solid var(--border-color); 
     padding-bottom: 5px; 
 }
 
+/* CRITICAL FIX: Ensures the injected chart div fills 100% of the card space */
 .chart-card > div { 
     flex-grow: 1; 
-    /* Reduced min-height for the plot area itself */
+    width: 100% !important; 
+    height: 100% !important;
     min-height: 200px; 
+    overflow: hidden; 
 }
 
 /* 1. Market Price Runs: Full-width (100%) */
-/* This chart will span all 4 columns (grid-column: span 4) */
 .chart-card.full-width {
     grid-column: span 4; 
-    min-height: 300px; /* Adjust min-height to match the Python chart height */
+    min-height: 300px; 
 }
 
 /* 2. Predictive Model, SMA, Daily Returns, Max Profit: Half-share (50% width) */
-/* These charts will span 2 columns out of 4, ensuring equal space in their row. */
 .chart-card.half-share {
     grid-column: span 2; 
 }
 
-/* --- Remaining Styles (Unchanged) --- */
+/* --- Mobile Responsiveness: Stack columns below 768px --- */
+@media (max-width: 767px) {
+    main.dashboard-grid {
+        grid-template-columns: 1fr; 
+        gap: 15px; 
+        padding: 10px;
+    }
+    .chart-card.full-width,
+    .chart-card.half-share {
+        grid-column: span 1; 
+    }
+}
+
+/* --- General Metrics and Controls Styling --- */
 
 .chart-card p {
     font-size: 0.9em;
-    color: #555;
-    margin-top: 5px; /* Reduced margin */
+    /* Use secondary text color for metrics */
+    color: var(--text-secondary); 
+    margin-top: 5px; 
     line-height: 1.4;
+}
+
+.chart-card strong {
+    font-weight: 700;
 }
 
 .navigation-controls {
@@ -82,12 +154,29 @@
     text-align: left;
     margin-bottom: 15px;
     font-size: 2.2em;
-    color: #333;
+    /* Use primary text color for the main title */
+    color: var(--text-primary); 
 }
 
 .nav-separator {
     grid-column: 1 / -1; 
     border: none;
-    border-top: 1px solid #eee;
+    /* Use global border color for the separator */
+    border-top: 1px solid var(--border-color); 
     margin-bottom: 25px;
+}
+
+.error {
+    color: #dc3545; /* Keeping this red for standard error visibility */
+    font-weight: bold;
+    text-align: center;
+    padding: 20px 0;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 30px;
 }
