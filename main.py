@@ -3,7 +3,7 @@ from app import create_app
 from config import Config # Assuming you have a config.py file in your project root
 
 # 1. Initialize the application using the factory function
-# This function registers your routes from routes.py and loads config
+# This function registers routes from routes.py and loads config
 app = create_app(config_class=Config)
 
 if __name__ == '__main__':
