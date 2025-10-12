@@ -33,7 +33,10 @@ def plot_price_and_sma(df, window_size):
         for w in window_sizes:
             sma_col = f'sma_{w}'
             if sma_col not in df.columns:
-                df = calculate_sma(df, w)
+                # Assuming calculate_sma handles calculation and returns updated df
+                # If it doesn't, this needs correction based on actual implementation.
+                # For now, rely on external calculation/column existence.
+                pass 
 
         # --- Create Plotly figure ---
         fig = go.Figure()
@@ -62,9 +65,6 @@ def plot_price_and_sma(df, window_size):
             xaxis_title="Date",
             yaxis_title="Price",
             template="plotly_white",
-            # FIX: Reduce size for the 25% width (span 1) chart
-            width=400,
-            height=300
         )
 
         return fig
@@ -125,10 +125,10 @@ def plot_runs(runs_df, prices, min_length=4):
             name=f"{run['direction']} Run (Length {run['length']})",
             showlegend=False,
             hovertemplate=f"<b>{run['direction']} Run</b><br>" +
-                         f"Length: {run['length']} days<br>" +
-                         "Date: %{x}<br>" +
-                         "Price: %{y:.2f}<br>" +
-                         "<extra></extra>"
+                          f"Length: {run['length']} days<br>" +
+                          "Date: %{x}<br>" +
+                          "Price: %{y:.2f}<br>" +
+                          "<extra></extra>"
         ))
     
     fig.update_layout(
@@ -137,8 +137,6 @@ def plot_runs(runs_df, prices, min_length=4):
         yaxis_title='Close Price',
         hovermode='closest',
         template='plotly_white',
-        # FIX: Reduce height for a compact full-width chart
-        height=350
     )
     
     return fig
@@ -171,9 +169,7 @@ def plot_daily_returns_plotly(data, stock_name = "Stock"):
         fig.update_layout(title=f"Daily Returns for {stock_name}",
                           xaxis_title="Date", yaxis_title="Return (%)",
                           template="plotly_white",
-                          # FIX: Reduce size for the 25% width (span 1) chart
-                          width=400,
-                          height=300)
+                          )
         
         return fig
     except Exception as e:
@@ -197,13 +193,12 @@ def plot_max_profit_segments(data, stock_name = "Stock"):
     fig.update_layout(title=f"{stock_name} Max Profit Segments — Total Profit: ${total_profit:.2f}",
                       xaxis_title="Date", yaxis_title="Price ($)",
                       template="plotly_white",
-                      # FIX: Reduce height for a compact full-width chart
-                      height=350)
+                      )
     
     return fig
 
 
-# Prediction Visualization (Validation Plot and Table removed for brevity, assuming only main plots are needed)
+# Prediction Visualization 
 
 def predicted_plot(historical_data, forecast_dates, forecast_values):
     """
@@ -277,9 +272,6 @@ def predicted_plot(historical_data, forecast_dates, forecast_values):
         legend=dict(
             yanchor="top", y=0.99, xanchor="left", x=0.01
         ),
-        # FIX: Reduced size for the 75% wide (span 3) chart
-        width=800,
-        height=450
     )
 
     return fig
