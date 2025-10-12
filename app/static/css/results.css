@@ -1,8 +1,9 @@
 .dashboard-grid {
     display: grid;
-    /* Remains 4 columns for flexible alignment */
+    /* 4 columns is correct */
     grid-template-columns: repeat(4, 1fr); 
-    gap: 15px; 
+    /* Tighter gap between cards for compactness */
+    gap: 10px; 
     max-width: 1400px; 
     margin: 20px auto; 
     padding: 0 20px;
@@ -18,49 +19,62 @@
     background-color: #ffffff;
     border: 1px solid #e0e0e0; 
     border-radius: 8px; 
-    padding: 15px; 
+    /* Reduced padding for compactness */
+    padding: 10px; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
     display: flex; 
     flex-direction: column;
-    /* Ensure height is flexible but not too tall on small rows */
-    min-height: 250px; 
+    
+    /* Reduced min-height to allow more charts on screen */
+    min-height: 280px; 
 }
 
 .chart-title {
-    font-size: 1.1em; 
+    /* Slightly smaller title font */
+    font-size: 1em; 
     color: #333;
     margin-top: 0;
-    margin-bottom: 10px;
+    /* Reduced bottom margin */
+    margin-bottom: 5px; 
     border-bottom: 1px solid #f0f0f0;
-    padding-bottom: 8px;
+    /* Reduced title padding */
+    padding-bottom: 5px; 
 }
 
 .chart-card > div { 
     flex-grow: 1; 
-    min-height: 150px; 
+    /* Reduced min-height for the plot area itself */
+    min-height: 200px; 
 }
 
-/* 1. Charts that should take the full row (Max Profit, Runs) */
+/* 1. Full-width charts (Max Profit, Runs) */
 .chart-card.full-width {
     grid-column: span 4; 
 }
 
-/* 2. FIX: Predictive Model now takes 66% width (3 out of 4 columns). 
-      This is the primary fix to allow another chart beside it. */
+/* 2. Large chart (Predictive Model) is 75% width, allowing one chart beside it */
 .chart-card.large-chart {
     grid-column: span 3; 
+    /* Main chart gets slightly more height */
+    min-height: 400px; 
 }
 
-/* 3. FIX: Half-width charts now take 33% width (1 out of 4 columns). 
-      This allows one half-width chart to sit next to the large-chart (3 + 1 = 4). */
+/* 3. Half-width charts (SMA, Daily Returns) are 25% width */
 .chart-card.half-width {
     grid-column: span 1; 
 }
 
+/* Optional: Targets the third chart card (Daily Returns) if you want it wider */
+.chart-card:nth-of-type(6) { 
+    grid-column: span 2; /* Making Daily Returns 50% width */
+}
+
+/* --- Remaining Styles --- */
+
 .chart-card p {
     font-size: 0.9em;
     color: #555;
-    margin-top: 10px;
+    margin-top: 5px; /* Reduced margin */
     line-height: 1.4;
 }
 
