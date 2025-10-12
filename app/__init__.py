@@ -9,13 +9,9 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     # 1. IMPORT the routes module from the local package
-    # The leading dot (.) indicates a relative import within the 'app' package.
     from . import routes 
-    
-    # Alternatively, and often clearer if using Blueprints directly:
     from .routes import main_bp 
     app.register_blueprint(main_bp)
     
     # 2. REGISTER the Blueprint with the application instance
-
     return app

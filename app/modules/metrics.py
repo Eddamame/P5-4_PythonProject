@@ -58,7 +58,7 @@ Steps:
     4. Iterate through prices and sum all positive differences.
     5. Return the total profit rounded to 2 decimals.
 
-    ----- Price Trend Runs ------------------
+----- Price Trend Runs ------------------
 Objective:
     Identify consecutive sequences (runs) of price movement (up or down) in a time series dataset.
 Features:
@@ -250,20 +250,6 @@ def get_significant_runs(runs_df, min_length=4):
     }
 
 
-# --- TESTING ---
-# This block allows you to run the file directly to test the functions.
-
-# if __name__ == '__main__':
-#    data = get_hist_data('AMZN', '12mo')
-#    df = api_data_handler(data)
-
-#     # Test Run Analysis
-#     print("--- Testing Run Analysis for AMZN ---")
-
-#    runs_df, direction, prices = calculate_runs(df)
-## Can use this to quick view the significant runs
-#    result = get_significant_runs(runs_df, 5)
-#    print(result['significant_runs'] )
 
 
     

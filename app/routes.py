@@ -11,9 +11,7 @@ import plotly.io as pio
 main_bp = Blueprint('main', __name__)
 
 from app.modules.data_fetcher import get_hist_data
-# Import the new cache functions
 from app.modules.data_handler import api_data_handler, handle_backup_csv, store_clean_data, retrieve_clean_data
-
 from app.modules.prediction import forecast_prices
 from app.modules.visualization import (
     predicted_plot,
@@ -56,7 +54,7 @@ def index():
         session['period'] = period
 
         # Clear any previous analysis data
-        # We only need to clear the session key pointing to the cache
+        # clear the session key pointing to the cache
         session.pop('data_cache_key', None)
         session.pop('selected_methods', None)
         session.pop('sma_window', None)
@@ -215,8 +213,8 @@ def results():
         if clean_data is None or clean_data.empty:
             raise ValueError("Analysis data not found in cache or is empty. Please restart the analysis.")
 
-        # --- OPTIMIZATION: Removed redundant pd.to_datetime call. 
-        # The data_handler ensures clean_data['date'] is already datetime type.
+       
+        
 
         # Initialize results dictionary
         analysis_results = {
@@ -246,7 +244,6 @@ def results():
             except Exception as e:
                 current_app.logger.error(f"Prediction model error: {e}")
                 analysis_results['plots']['prediction'] = None
-                # Keep the error message for debugging purposes
                 analysis_results['metrics']['prediction_error'] = str(e)
 
 
@@ -420,7 +417,7 @@ def validate():
         # Get validation log for detailed output
         log_output = '\n'.join(validation_log)
         
-        # ✅ FIXED: Use correct variable names that match the template
+        
         return render_template('validate.html',
                              summary=summary,
                              categories=category_results,
