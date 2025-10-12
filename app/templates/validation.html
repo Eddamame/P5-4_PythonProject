@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Validation Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f9f9f9;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: #fff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background: #f0f0f0;
+        }
+        .pass {
+            color: green;
+            font-weight: bold;
+        }
+        .fail {
+            color: red;
+            font-weight: bold;
+        }
+        .caution {
+            color: orange;
+            font-weight: bold;
+        }
+        details {
+            margin-bottom: 15px;
+        }
+        summary {
+            font-weight: bold;
+            cursor: pointer;
+        }
+        pre {
+            background: #eee;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stock Market Validation Results</h1>
+
+    <h2>Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Passed</th>
+                <th>Total</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category, res in results.items() %}
+            <tr>
+                <td>{{ category.replace('_', ' ').title() }}</td>
+                <td>{{ res.passed }}</td>
+                <td>{{ res.total }}</td>
+                <td>
+                    {% if res.passed == res.total %}
+                        <span class="pass">PASS</span>
+                    {% elif res.passed > 0 %}
+                        <span class="caution">CAUTION</span>
+                    {% else %}
+                        <span class="fail">FAIL</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Details by Category</h2>
+    {% for category, res in results.items() %}
+    <details>
+        <summary>{{ category.replace('_', ' ').title() }}</summary>
+        <table>
+            <thead>
+                <tr>
+                    <th>Test Name</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in res.tests %}
+                <tr>
+                    <td>{{ test.test_name }}</td>
+                    <td>
+                        {% if test.success %}
+                            <span class="pass">PASS</span>
+                        {% else %}
+                            <span class="fail">FAIL</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ test.details }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </details>
+    {% endfor %}
+
+    <h2>Raw Logs</h2>
+    <pre>{{ logs | join('\n') }}</pre>
+
+</body>
+</html>

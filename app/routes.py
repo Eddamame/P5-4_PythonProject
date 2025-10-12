@@ -29,6 +29,8 @@ from app.modules.metrics import (
     calculate_runs 
 )
 
+from app.modules import validation  # Import the validation module
+
 
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
@@ -351,6 +353,20 @@ def results():
         flash(f"Critical error generating results: {str(e)}", 'error')
         return redirect(url_for('main.index'))
 
+@main_bp.route('/validation')
+def show_validation():
+    from app.modules import validation  # import validation module
+
+    # Clear previous logs
+    validation.validation_log.clear()
+
+    # Run validation
+    all_results = validation.run_all_validations()
+
+    # Send results and logs to template
+    return render_template('validation.html',
+                           results=all_results,
+                           logs=validation.validation_log)
 
 @main_bp.route('/reset')
 def reset():

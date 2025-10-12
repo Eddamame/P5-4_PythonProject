@@ -15,6 +15,7 @@ The **Stock Market Analysis Project** is a web application built with **Python F
     * Market Price Runs (identifying consecutive up/down days).
     * Maximum Profit calculation over the analysis period.
 * **Interactive Visualizations:** Generates clear and insightful charts for all selected metrics.
+* **Automated Validation Suite:** Built-in testing framework to validate all modules and ensure data integrity.
 
 ## Project Structure
 
@@ -29,9 +30,11 @@ The application logic is organized into several modules, each handling a specifi
 | `prediction.py` | Handles the next-day price prediction model. | `predict_next_day(data)`, `validate_and_plot(data)` |
 | `metrics.py` | Calculates technical metrics based on cleaned data. | `calculate_daily_returns(data)`, `calculate_sma(data, window_sizes)`, `calculate_runs(data)`, `calculate_max_profit(data)` |
 | `visualization.py` | Generates all necessary charts and plots. | `plot_sma()`, `plot_runs()`, `plot_daily_returns()`, `plot_max_profit()` |
+| `validation.py` |Automated testing suite for all modules and functions | `run_all_validations()`, `validate_data_handler()`, `validate_sma_calculation()`, `validate_runs_analysis()`, `validate_returns_and_profit()` |
 | `index.html` | User input form (Ticker, Period). | |
 | `metrics.html` | User selection of analysis methodologies (SMA, Runs, etc.). | |
 | `results.html` | Final dashboard displaying all charts and prediction. | |
+| `validate.html`| Validation test results dashboard. ||
 
 ---
 
@@ -108,6 +111,37 @@ The application follows a three-step routing process:
         4.  Daily Returns Chart
         5.  Max Profit Chart
         6.  Market Price Runs Chart
+
+## Validation & Testing
+
+The project includes a comprehensive validation system (validation.py) that tests all core modules to ensure data integrity and function correctness.
+
+### Running Validation Tests
+* **Option 1: Web Interface**
+    1. Start the Flask application: python main.py
+    2. Navigate to http://127.0.0.1:5000/validate
+    3. View real-time test results in the browser dashboard
+
+* **Option 2: Command Line**
+    #### Run validation directly
+    python app/modules/validation.py
+
+    #### Or via Python module
+    python -m app.modules.validation
+
+## What Gets Validated
+* **The validation suite runs 38+ automated tests across 5 categories:**
+
+|`Test Category`	        `Tests`	`What It Validates`|
+* **Data Handler**	            7	API data processing, column presence, data types, date parsing, filtering sorting
+
+**SMA Calculation**	            7	Moving average accuracy, window sizes, padding, DataFrame structure
+
+**Runs Analysis**	            9	Run detection, direction classification, length calculation, filtering
+
+**Returns & Profit**	        8	Daily return calculation, max profit algorithm, edge cases
+
+**Real Data Compatibility**	    7	Column naming, data formats, logical constraints, stock symbol validation   
 
 ---
 
