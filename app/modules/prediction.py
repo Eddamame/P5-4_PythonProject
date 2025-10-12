@@ -128,7 +128,7 @@ def forecast_prices(data, target_column, n_days: int):
     # NOTE: The 'predicted_plot' is already imported globally, so we remove the redundant inner import.
     
     try:
-        # Ensure the date column is a datetime object to allow Timedelta addition (from previous fix)
+        # FIX (Retained from previous step): Ensure the date column is a datetime object to allow Timedelta addition
         data['date'] = pd.to_datetime(data['date'], errors='coerce')
         data.dropna(subset=['date'], inplace=True)
 
@@ -171,8 +171,9 @@ def forecast_prices(data, target_column, n_days: int):
 
         for day in range(n_days):
             # Use the fitted model object to predict. 
-            # FIX: Use [0][0] to correctly extract the scalar value from the 2D array prediction result.
-            next_prediction = model.predict(current_features)[0][0] 
+            # FIX: Reverting the prediction indexing to [0]. Since the model was trained with 1D target 
+            # data, predict returns a 1D array of shape (1,). Indexing it once [0] gives the scalar value.
+            next_prediction = model.predict(current_features)[0] 
             
             future_predictions.append(next_prediction)
             print(f"Day {day + 1}: Predicted {target_column} = {next_prediction:.2f}")
