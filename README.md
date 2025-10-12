@@ -25,11 +25,13 @@ The application now uses the **Application Factory pattern** within the `app/` p
 P5-4_PythonProject/
 ├── app/
 │   ├── modules/                     # Core Business & ML Logic
+|   |   ├── init.py
 │   │   ├── data_fetcher.py
 │   │   ├── data_handler.py
 │   │   ├── metrics.py
 │   │   ├── model.py                 # Dedicated file for the core predictive model
 │   │   ├── prediction.py
+|   |   ├── validation.py            # Automated testing suite for all modules and functions
 │   │   └── visualization.py
 │   ├── static/                      # Static Assets (CSS and Images)
 │   │   ├── css/
@@ -39,8 +41,9 @@ P5-4_PythonProject/
 │   ├── templates/                   # HTML Templates
 │   │   ├── index.html
 │   │   ├── metrics.html
-│   │   └── results.html
-│   ├── init.py                  # Flask App Factory (e.g., create_app())
+│   │   ├── results.html
+|   |   └── validation.html
+│   ├── init.py                      # Flask App Factory (e.g., create_app())
 │   └── routes.py                    # Flask Route Definitions (Blueprint)
 ├── data/                            # Contingency CSV files or model artifacts
 │   └── backup.csv
@@ -61,6 +64,7 @@ P5-4_PythonProject/
 | `app/modules/model.py` | Contains the structure and loading of the machine learning model. | `load_model()` |
 | `app/modules/prediction.py` | Handles the next-day price prediction logic. | `predict_next_day(data)` |
 | `app/modules/metrics.py` | Calculates all technical metrics. | `calculate_daily_returns(data)`, `calculate_sma(data)` |
+| `app/modules/validation.py` | Automated testing suite for all modules and functions. | `run_all_validations()`, `validate_data_handler()`, `validate_sma_calculation()`, `validate_runs_analysis()`, `validate_returns_and_profit()` |
 | `app/modules/visualization.py` | Generates all necessary charts and plots. | `plot_sma()`, `plot_runs()` |
 | **`Procfile`** | **Railway Deployment Command.** | `web: gunicorn main:app` (Example) |
 
