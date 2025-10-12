@@ -13,28 +13,16 @@ import pandas as pd
 ----- SMA Analysis ------------------
 Author: Si Yun
 1. SMA Analysis
-Input:
 Objective: Smooth out short-term price fluctuations to identify the underlying trend direction over a specified period.
 parameter:
     df: pd.DataFrame: cleaned data from data_handler
     window_size: list of window size defined by user (datatype: int)    
 return:
     dataframe of the calculated SMA 
-step 1. Validate inputs
-    Check that 'date' and 'close' columns exist in the DataFrame.
-    Verify that each window size is a positive integer.
-step 2. Prepare the data
-    Set 'date' as the index.
-    Retrieve the 'close' prices and convert them into a list for easier calculation.
-step 3. Perform SMA calculation
-    For each window size, compute the average closing price using the sliding window approach.
-    The first n-1 entries will be None since there's not enough data to calculate SMA.
-step 4. Store results
-    Save the computed SMA values into a new column (e.g., sma_20, sma_50) in the DataFrame.
-step 5. Return output
-    Return the updated DataFrame containing all SMA columns.
-step 6.Error handling
-    Use the except block to catch and print input or unexpected errors without crashing the program.
+step1: Retrieve the date and close data from the clean dataset
+step2: Loop through the window size specify by the user 
+step3: Perform the calculation using sliding window and store them in a list sma
+step4: return the calculated sma into a new column in dataframe
 
 ----- Daily Returns ------------------
 Author: Xue E
@@ -94,7 +82,7 @@ Steps:
 # --- SMA Analysis ---
 def calculate_sma(df: pd.DataFrame, window_sizes: int | list[int]) -> pd.DataFrame:
     try:
-        # --- Input validation ---
+        # Input validation
         if 'date' not in df.columns:
             raise KeyError("'date' column not found in dataframe")
         if 'close' not in df.columns:
@@ -102,7 +90,7 @@ def calculate_sma(df: pd.DataFrame, window_sizes: int | list[int]) -> pd.DataFra
         if df.empty:
             raise ValueError("Input DataFrame is empty.")
 
-        # --- Handle both int and list inputs ---
+        # Take in both int and a list of int
         if isinstance(window_sizes, int):
             window_sizes = [window_sizes]
         elif isinstance(window_sizes, list):
@@ -111,30 +99,30 @@ def calculate_sma(df: pd.DataFrame, window_sizes: int | list[int]) -> pd.DataFra
         else:
             raise TypeError("window_sizes must be an int or a list of ints.")
 
-        # --- Step 1: Prepare data ---
+       # Retrieving the data from df - date & close_price
         df = df.copy().set_index('date')
-        close_prices = df['close'].tolist()
-
-        # --- Step 2: Sliding window SMA calculation ---
+        closed_prices = df['close'].tolist()
+        
+        # loop through each window size to calculate the SMA
         for n in window_sizes:
             sma = []
             window = []
             window_sum = 0.0
 
-            for price in close_prices:
+            for price in closed_prices:
                 window.append(price)
                 window_sum += price
 
-                # Keep window size fixed
+               # If the window size exceed, it will remove the oldest close value
                 if len(window) > n:
                     window_sum -= window.pop(0)
 
-                # Only calculate SMA when window full
+                # Perform the calculation only if the window size met the user input
                 if len(window) == n:
                     sma.append(round(window_sum / n, 2))
                 else:
                     sma.append(None)
-
+            # Store the Calculated sma into a new column
             df[f'sma_{n}'] = sma
 
         return df.reset_index()
@@ -143,7 +131,6 @@ def calculate_sma(df: pd.DataFrame, window_sizes: int | list[int]) -> pd.DataFra
         print(f"Input Error: {e}")
     except Exception as e:
         print(f"Unexpected Error: {e}")
-
 
 # --- Daily Returns --- 
 def calculate_daily_returns(data):
