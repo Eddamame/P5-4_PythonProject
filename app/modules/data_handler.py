@@ -125,6 +125,9 @@ def handle_backup_csv(
             'data', 
             'backup_data.csv'
         )
+        # --- DEBUG LINES: Add these two lines ---
+        print(f"DEBUG: Flask Root Path: {current_app.root_path}")
+        print(f"DEBUG: Calculated Backup Path: {backup_file_path}")
     except RuntimeError:
         backup_file_path = os.path.join('data', 'backup_data.csv')
         
