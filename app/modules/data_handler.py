@@ -132,7 +132,14 @@ def handle_backup_csv(
         pass
     
     try:
-        df = pd.read_csv(backup_file_path)
+        # --- CRITICAL FIX: Load the CSV and parse the 'date' column immediately ---
+        df = pd.read_csv(
+            backup_file_path,
+            # Tell Pandas to parse 'date' as a datetime object
+            parse_dates=['date'],   
+            # Tell the parser to use Day/Month/Year (DD/MM/YYYY) format
+            dayfirst=True           
+        )
     except FileNotFoundError:
         raise FileNotFoundError(f"Backup data file not found at: {backup_file_path}. Please ensure it exists.")
     except Exception as e:
@@ -156,15 +163,13 @@ def handle_backup_csv(
     # Convert data types
     df['name'] = df['name'].astype(str)
     
-    # --- CRITICAL FIX: Use dayfirst=True for robust DD/MM/YYYY parsing ---
-    # This handles the 8/2/2013 and 11/3/2013 format correctly.
-    df['date'] = pd.to_datetime(df['date'], dayfirst=True, errors='coerce') 
+    # The 'date' column is now already a datetime object due to pd.read_csv
+    # We remove the old manual conversion: df['date'] = pd.to_datetime(df['date'], dayfirst=True, errors='coerce')
     
     for col in ['open','close','high','low','volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Drop any rows where date or crucial numeric columns failed conversion
-    # This is where rows with bad dates (NaT) or bad numerics (NaN) are dropped.
     df.dropna(subset=['date', 'close', 'volume'], inplace=True)
     
     # Final check after cleaning
@@ -175,6 +180,7 @@ def handle_backup_csv(
     try:
         start_date = _get_start_date_from_period(period)
         # Filter the DataFrame to include only dates from the start_date onwards
+        # This comparison is highly reliable when 'date' is a proper datetime object.
         df = df[df['date'].dt.date >= start_date].copy()
     except Exception as e:
          try:
