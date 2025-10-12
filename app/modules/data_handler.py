@@ -56,7 +56,6 @@ def _get_start_date_from_period(period: str) -> date:
 def api_data_handler(
     df_raw: pd.DataFrame, 
     ticker: str
-    # filterTime parameter removed as data is already filtered by get_hist_data
 ) -> pd.DataFrame:
     """
     Data Handler for cleaning and standardizing the DataFrame returned by yfinance API.
@@ -125,7 +124,7 @@ def handle_backup_csv(
             'data', 
             'backup_data.csv'
         )
-        # --- DEBUG LINES: Add these two lines ---
+        # --- DEBUG LINES (Kept for path verification) ---
         print(f"DEBUG: Flask Root Path: {current_app.root_path}")
         print(f"DEBUG: Calculated Backup Path: {backup_file_path}")
     except RuntimeError:
@@ -156,11 +155,14 @@ def handle_backup_csv(
     df = df[df['name'] == clean_ticker].copy()
     
     if df.empty:
+        # Check this after initial filtering.
         raise ValueError(f"No data found for ticker '{clean_ticker}' in backup file.")
 
     # Convert data types
     df['name'] = df['name'].astype(str)
-    df['date'] = pd.to_datetime(df['date'], errors='coerce') 
+    
+    # --- CRITICAL FIX: Explicitly set format to DD/MM/YYYY ---
+    df['date'] = pd.to_datetime(df['date'], format='%d/%m/%Y', errors='coerce') 
     
     for col in ['open','close','high','low','volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -168,7 +170,11 @@ def handle_backup_csv(
     # Drop any rows where date or crucial numeric columns failed conversion
     df.dropna(subset=['date', 'close', 'volume'], inplace=True)
     
-    # --- CRITICAL FIX: Filter by Period ---
+    # Check for empty DataFrame again after cleaning (in case all rows failed date conversion)
+    if df.empty:
+        raise ValueError(f"Ticker '{clean_ticker}' found in backup, but all rows were dropped due to bad date/numeric values.")
+
+    # --- Filter by Period ---
     try:
         start_date = _get_start_date_from_period(period)
         # Filter the DataFrame to include only dates from the start_date onwards
