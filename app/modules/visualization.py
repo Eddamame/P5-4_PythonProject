@@ -52,8 +52,6 @@ def plot_price_and_sma(df, window_size):
                 x=df['date'],
                 y=df[f'sma_{w}'],
                 mode='lines',
-                y=df[f'sma_{w}'],
-                mode='lines',
                 name=f'SMA {w}'
             ))
 
