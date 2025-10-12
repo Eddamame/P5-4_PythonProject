@@ -1,49 +1,53 @@
-/* Style for the container holding the navigation buttons */
-.navigation-controls {
-    /* Assuming you are using a grid, this makes it span the whole top row */
-    grid-column: 1 / -1; 
-    display: flex;
-    justify-content: center; /* Center the buttons horizontally */
-    gap: 20px; /* Space between the buttons */
-    margin: 20px 0; /* Vertical spacing around the buttons */
+/* GLOBAL TERMINAL STYLING */
+body {
+    /* Dark, charcoal background */
+    background-color: #1a1a1a; 
+    /* Light green/terminal color for default text */
+    color: #00ff00; 
+    /* A monospace or clean, technical font */
+    font-family: 'Consolas', 'Courier New', monospace; 
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
 }
 
-/* Basic button/link styling (adjust based on your existing btn classes) */
-.btn {
-    text-decoration: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px; /* Space between icon and text */
+/* Ensure the main container doesn't stretch too wide for a focused look */
+.main-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-/* Style for the "Change Metrics" button */
-.btn-secondary {
-    background-color: #f0f0f0; /* Light/neutral color */
-    color: #333;
-    border: 1px solid #ccc;
-}
-.btn-secondary:hover {
-    background-color: #e0e0e0;
+/* Header and Footer Styling */
+header, footer {
+    padding: 10px 20px;
+    background-color: #0d0d0d; /* Even darker header/footer */
+    color: #ffcc00; /* Yellow for branding elements */
+    text-align: center;
 }
 
-/* Style for the "New Ticker" button */
-.btn-primary {
-    background-color: #007bff; /* Primary/accent color */
-    color: white;
-    border: 1px solid #007bff;
-}
-.btn-primary:hover {
-    background-color: #0056b3;
-}
-
-/* Separator line for better visual flow */
-.nav-separator {
-    grid-column: 1 / -1;
+/* Horizontal Rule for separators */
+hr, .nav-separator {
     border: none;
-    border-top: 1px solid #eee;
-    margin-bottom: 20px;
+    border-top: 1px solid #333; /* Darker, subtle line */
+    margin: 10px 0;
+}
+
+/* Dashboard Title */
+.dashboard-title {
+    color: #ffffff; /* White title for contrast */
+    text-align: left;
+    padding: 10px 0;
+    font-size: 2em;
+    font-weight: normal;
+}
+
+/* Links and Error text */
+a {
+    color: #00ccff; /* Bright blue for links */
+    text-decoration: none;
+}
+.error {
+    color: #ff3333; /* Red for errors */
+    font-weight: bold;
 }
